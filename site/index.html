@@ -122,26 +122,22 @@
   .crumbs{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin:4px 0 8px}
   .crumbs b{color:var(--text)}
   .crumbs button{padding:2px 10px;font-size:12px;background:var(--glass2);border:1px solid var(--glass-border)}
-  /* 관계망 */
+  /* 관계망(워드클라우드 + 호버 시 관계) */
   .netgrid{display:grid;grid-template-columns:minmax(500px,8fr) minmax(320px,4fr);gap:16px}
   @media (max-width:980px){.netgrid{grid-template-columns:1fr}}
   .net{width:100%;height:640px;display:block;border-radius:16px;background:var(--glass2);cursor:grab;touch-action:none}
   .net.drag{cursor:grabbing}
-  .net line{stroke:var(--text);stroke-opacity:.12;transition:stroke-opacity .15s}
-  .net line.on{stroke:var(--accent);stroke-opacity:.75}
-  .net line.off{stroke-opacity:.03}
-  .net .node{cursor:pointer;transition:opacity .15s}
-  .net .node.off{opacity:.12}
-  .net .node circle{stroke:#fff;stroke-width:1.5;stroke-opacity:.9}
-  .net .node.sec circle{fill:var(--dim);stroke-opacity:.5}
-  .net .node text{fill:var(--text);font-weight:600;pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
-  .net .node.sec text{font-weight:500;fill:var(--muted)}
-  .net .node.on circle{stroke:var(--accent);stroke-width:3}
-  .net .node.on text{fill:var(--accent)}
-  .net .node.pin circle{stroke:var(--text);stroke-width:3}
-  .net .ghost line{stroke:var(--accent);stroke-opacity:.5;stroke-dasharray:3 3}
-  .net .ghost circle{fill:var(--accent);fill-opacity:.25;stroke:var(--accent)}
-  .net .ghost text{fill:var(--accent);font-size:11px;paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+  .net line{stroke:var(--accent);stroke-opacity:0;transition:stroke-opacity .18s}
+  .net line.on{stroke-opacity:.55}
+  .net .word{cursor:pointer;transition:opacity .18s}
+  .net .word rect{fill:transparent;transition:fill .18s}
+  .net .word text{fill:var(--text);font-weight:700;pointer-events:none;transition:fill .18s;paint-order:stroke;stroke:var(--bg);stroke-width:2.5px;stroke-linejoin:round}
+  .net .word.sec text{font-weight:500;fill:var(--muted)}
+  .net.focus .word.off{opacity:.16}
+  .net .word.on text{fill:var(--accent)!important}
+  .net .word.on rect{fill:var(--accent-soft)}
+  .net .word.center rect{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);stroke-width:1.5}
+  .net .word.pin rect{stroke:var(--text);stroke-width:1.5}
   .nethelp{color:var(--dim);font-size:12px;margin-top:8px;display:flex;gap:14px;flex-wrap:wrap}
   .nethelp i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-block:-1px;vertical-align:-1px}
   .side h2{font-size:18px;letter-spacing:-.02em}
@@ -215,7 +211,7 @@
     <section class="glass panel">
       <h2>키워드 관계망 <span class="sub" id="mapSub"></span></h2>
       <div id="net"></div>
-      <div class="nethelp"><span><i style="background:var(--accent)"></i>큰 점 = 순위 키워드(크기는 점수, 색은 카테고리)</span><span><i style="background:var(--dim)"></i>작은 점 = 함께 등장한 연관어</span><span>올리면 연결이 밝아지고 오른쪽에 기사가 뜹니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
+      <div class="nethelp"><span>큰 글자 = 순위 키워드(크기는 점수, 색은 카테고리) · 작은 회색 글자 = 함께 등장한 연관어 · 가까이 놓인 말일수록 같이 다뤄진 말입니다</span><span>글자에 마우스를 올리면 관계망의 단어들이 밝아지고 연결선이 나타나며, 오른쪽에 관련 기사가 뜹니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
     </section>
     <section class="glass panel side" id="netSide"></section>
   </div>
@@ -241,7 +237,7 @@
       <i class="sw" style="background:var(--publish)"></i><b>발행</b> 묶인 기사 수(<span id="sP"></span>)
       <i class="sw" style="background:var(--search)"></i><b>검색</b> 구글 트렌드·네이트·줌 실시간 검색어와 맞물리는지(<span id="sS"></span>)
       <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 처음 등장 후 3시간 안이거나 직전보다 기사가 늘었는지(<span id="sK"></span>)를 더한 값입니다.</p>
-    <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 순위 키워드와 연관어를 한 화면에 연결한 지도로, 키워드에 마우스를 올리면 그 키워드의 연결과 관련 기사가 나타납니다.</p>
+    <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 순위 키워드와 연관어를 워드클라우드처럼 펼쳐 둔 화면으로, 평소에는 선이 없다가 글자에 마우스를 올리면 그 말과 함께 다뤄진 단어들이 밝아지고 연결선이 나타나며 관련 기사가 뜹니다.</p>
     <p><b>변동</b>은 직전 수집 대비 순위 이동, G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다. 가중치는 <code>config.toml</code>에서 바꿀 수 있습니다.</p>
     <p>수집은 30분마다 한 번입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
     <p class="foot" id="foot"></p>
@@ -559,84 +555,82 @@
     const secs = [...sec.values()].filter(e => e.links.length>=2 || e.top).sort((a,b) => b.links.length - a.links.length || b.links[0][1]-a.links[0][1]);
     const cap = Math.max(0, 170 - nodes.size);
     for(const e of secs.slice(0, cap)){ nodes.set(e.k, {k:e.k, text:e.text, s:0, cat:"", type:"s", deg:e.links.length}); for(const [pk,c] of e.links) addEdge(pk, e.k, c); }
-    // 위치 초기화: 카테고리별 각도로 원 위에, 연관어는 연결된 키워드 곁에
     const W=1200, H=640, N=[...nodes.values()], idx = new Map(N.map((n,i)=>[n.k,i]));
+    const smax = Math.max(1, ...prims.map(p => p.s));
+    // 글자 크기와 상자 크기 (워드클라우드처럼 점수가 클수록 크게)
+    // 글자 폭 추정 (캔버스 measureText는 시스템 글꼴 목록을 못 읽어 폭을 작게 잡는다)
+    const textW = (t, fs) => { let w = 0; for(const ch of t){ w += /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af\u4e00-\u9fff\u3040-\u30ff]/.test(ch) ? 0.98 : /[A-Z0-9]/.test(ch) ? 0.68 : /[a-z]/.test(ch) ? 0.58 : ch===" " ? 0.32 : 0.5; } return w*fs; };
+    for(const n of N){ n.fs = n.type==="p" ? 14 + 28*Math.sqrt(n.s/smax) : 11.5; n.w = textW(n.text, n.fs) + 14; n.h = n.fs*1.32; }
+    // 1) 힘 배치: 연관된 말끼리 가깝게
     const catOrder = CATS.filter(c => c!=="전체").concat(["전체"]);
-    N.forEach((n,i) => { if(n.type==="p"){ const a = (catOrder.indexOf(n.cat)+ (i%3)*0.15)/catOrder.length*2*Math.PI; n.x = W/2 + Math.cos(a)*220; n.y = H/2 + Math.sin(a)*180; } });
+    N.forEach((n,i) => { if(n.type==="p"){ const a = (catOrder.indexOf(n.cat)+ (i%3)*0.15)/catOrder.length*2*Math.PI; n.x = W/2 + Math.cos(a)*240; n.y = H/2 + Math.sin(a)*170; } });
     N.forEach(n => { if(n.type==="s"){ const e = sec.get(n.k); const p = nodes.get(e.links[0][0]); n.x = (p.x||W/2) + (Math.random()-0.5)*80; n.y = (p.y||H/2) + (Math.random()-0.5)*80; } });
     const E = [...edges.entries()].map(([key,w]) => { const [a,b]=key.split("|"); return {a:idx.get(a), b:idx.get(b), w}; }).filter(e => e.a!=null && e.b!=null);
     const wmax = Math.max(1, ...E.map(e => e.w));
-    // 힘 기반 배치 (Fruchterman-Reingold 변형)
     const k = Math.sqrt(W*H/Math.max(1,N.length)) * 1.0;
     let temp = 60;
-    for(let it=0; it<260; it++){
+    for(let it=0; it<220; it++){
       const dx = new Float64Array(N.length), dy = new Float64Array(N.length);
       for(let i=0;i<N.length;i++) for(let j=i+1;j<N.length;j++){
         let ex = N[i].x-N[j].x, ey = N[i].y-N[j].y; let d = Math.hypot(ex,ey)||0.01; if(d>420) continue;
         const f = (k*k)/d * (N[i].type==="p"&&N[j].type==="p" ? 2.2 : N[i].type==="s"&&N[j].type==="s" ? 0.6 : 1) / d; dx[i]+=ex*f; dy[i]+=ey*f; dx[j]-=ex*f; dy[j]-=ey*f;
       }
       for(const e of E){ let ex = N[e.a].x-N[e.b].x, ey = N[e.a].y-N[e.b].y; const d = Math.hypot(ex,ey)||0.01; const f = (d*d/k) * (0.4+0.9*e.w/wmax) / d; dx[e.a]-=ex*f; dy[e.a]-=ey*f; dx[e.b]+=ex*f; dy[e.b]+=ey*f; }
-      for(let i=0;i<N.length;i++){ const n=N[i]; const g = N[i].type==="p" ? 0.008 : 0.012; dx[i] += (W/2-n.x)*g; dy[i] += (H/2-n.y)*g*1.6; const d = Math.hypot(dx[i],dy[i])||0.01; const m = Math.min(d, temp); n.x += dx[i]/d*m; n.y += dy[i]/d*m; }
+      for(let i=0;i<N.length;i++){ const n=N[i]; const g = n.type==="p" ? 0.008 : 0.012; dx[i] += (W/2-n.x)*g; dy[i] += (H/2-n.y)*g*1.6; const d = Math.hypot(dx[i],dy[i])||0.01; const m = Math.min(d, temp); n.x += dx[i]/d*m; n.y += dy[i]/d*m; }
       temp = Math.max(1.5, temp*0.975);
     }
-    // 여백을 두고 화면에 맞춤
-    const xs = N.map(n=>n.x), ys = N.map(n=>n.y), minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-    const sx = (W-160)/Math.max(1,maxX-minX), sy = (H-100)/Math.max(1,maxY-minY);
-    for(const n of N){ n.x = 80 + (n.x-minX)*sx; n.y = 45 + (n.y-minY)*sy; }
-    // 겹치는 점 떼어내기 (라벨 자리 확보)
-    const rad = n => n.type==="p" ? 6 + 12*Math.sqrt(n.s/Math.max(1, ...N.filter(x=>x.type==="p").map(x=>x.s))) : 3.5;
-    for(let it=0; it<60; it++){
-      let moved = false;
-      for(let i=0;i<N.length;i++) for(let j=i+1;j<N.length;j++){
-        const a=N[i], b=N[j]; const need = rad(a)+rad(b)+ (a.type==="p"&&b.type==="p" ? 34 : 16);
-        let ex=b.x-a.x, ey=b.y-a.y; let d=Math.hypot(ex,ey); if(d>=need) continue; if(d<0.01){ ex=1; ey=0; d=1; }
-        const push=(need-d)/2; ex/=d; ey/=d; a.x-=ex*push; a.y-=ey*push; b.x+=ex*push; b.y+=ey*push; moved = true;
+    // 2) 워드클라우드 배치: 큰 말부터, 힘 배치가 정해 준 자리에서 나선을 그리며 빈 자리를 찾는다 (겹침 없음 보장)
+    const collides = (a,b) => Math.abs(a.x-b.x) < (a.w+b.w)/2 + 4 && Math.abs(a.y-b.y) < (a.h+b.h)/2 + 2;
+    const inside = n => n.x-n.w/2 >= 6 && n.x+n.w/2 <= W-6 && n.y-n.h/2 >= 6 && n.y+n.h/2 <= H-6;
+    const order2 = [...N].sort((a,b) => b.fs - a.fs || b.s - a.s);
+    const placed = [];
+    for(const n of order2){
+      const x0 = Math.max(n.w/2+6, Math.min(W-n.w/2-6, n.x)), y0 = Math.max(n.h/2+6, Math.min(H-n.h/2-6, n.y));
+      let done = false;
+      for(let t=0; t<3000 && !done; t++){
+        const a = 0.3*t, r = 1.7*a;                    // 한 바퀴에 약 10px씩 넓어지는 나선, 최대 반경 ≈ 화면 폭
+        n.x = x0 + Math.cos(a)*r*1.4; n.y = y0 + Math.sin(a)*r*0.8;
+        if(!inside(n)) continue;
+        if(!placed.some(p => collides(n,p))){ done = true; }
       }
-      for(const n of N){ n.x = Math.max(60, Math.min(W-60, n.x)); n.y = Math.max(30, Math.min(H-34, n.y)); }
-      if(!moved) break;
+      if(!done){ n.x = x0; n.y = y0; }
+      placed.push(n);
     }
     const nb = new Map(N.map(n => [n.k, new Set()]));
     for(const e of E){ nb.get(N[e.a].k).add(N[e.b].k); nb.get(N[e.b].k).add(N[e.a].k); }
-    return {W, H, N, E, nb, sec, wmax, smax: Math.max(1, ...prims.map(p => p.s))};
+    return {W, H, N, E, nb, sec, wmax, smax};
   }
   function renderNetwork(){
     if(!S.graph) S.graph = buildGraph();
     const g = S.graph;
-    $("mapSub").textContent = `${S.cat} · 키워드 ${g.N.filter(n=>n.type==="p").length}개 · 연관어 ${g.N.filter(n=>n.type==="s").length}개`;
-    const r = n => n.type==="p" ? 6 + 12*Math.sqrt(n.s/g.smax) : 3.5;
+    $("mapSub").textContent = `${S.cat} · 키워드 ${g.N.filter(n=>n.type==="p").length}개 · 연관어 ${g.N.filter(n=>n.type==="s").length}개 · 글자에 마우스를 올리면 관계가 나타납니다`;
     $("net").innerHTML = `<svg class="net" id="netSvg" viewBox="0 0 ${g.W} ${g.H}">
-      <g id="netEdges">${g.E.map((e,i) => `<line data-i="${i}" x1="${g.N[e.a].x.toFixed(1)}" y1="${g.N[e.a].y.toFixed(1)}" x2="${g.N[e.b].x.toFixed(1)}" y2="${g.N[e.b].y.toFixed(1)}" stroke-width="${(0.6+2.4*e.w/g.wmax).toFixed(1)}"/>`).join("")}</g>
-      <g id="netGhost" class="ghost"></g>
-      <g id="netNodes">${g.N.map(n => `<g class="node ${n.type==="s"?"sec":""}" data-k="${esc(n.k)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><circle r="${r(n).toFixed(1)}" fill="${n.type==="p"?(CAT_COLOR[n.cat]||"#999"):""}"/><text y="${(r(n)+11).toFixed(1)}" text-anchor="middle" font-size="${n.type==="p" ? (11+4*Math.sqrt(n.s/g.smax)).toFixed(1) : 10}">${esc(n.text)}</text></g>`).join("")}</g>
+      <g id="netEdges">${g.E.map((e,i) => `<line data-i="${i}" x1="${g.N[e.a].x.toFixed(1)}" y1="${g.N[e.a].y.toFixed(1)}" x2="${g.N[e.b].x.toFixed(1)}" y2="${g.N[e.b].y.toFixed(1)}" stroke-width="${(1+3*e.w/g.wmax).toFixed(1)}"/>`).join("")}</g>
+      <g id="netNodes">${g.N.map(n => `<g class="word ${n.type==="s"?"sec":""}" data-k="${esc(n.k)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><rect x="${(-n.w/2).toFixed(1)}" y="${(-n.h/2).toFixed(1)}" width="${n.w.toFixed(1)}" height="${n.h.toFixed(1)}" rx="8"/><text y="${(n.fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${n.fs.toFixed(1)}" style="${n.type==="p"?`fill:${CAT_COLOR[n.cat]||"#999"}`:""}">${esc(n.text)}</text></g>`).join("")}</g>
     </svg>`;
     const svg = $("netSvg");
-    const nodeEls = new Map([...svg.querySelectorAll(".node")].map(el => [el.dataset.k, el]));
+    const nodeEls = new Map([...svg.querySelectorAll(".word")].map(el => [el.dataset.k, el]));
     const edgeEls = [...svg.querySelectorAll("#netEdges line")];
     function highlight(key){
-      if(!key){ nodeEls.forEach(el => el.classList.remove("on","off")); edgeEls.forEach(el => el.classList.remove("on","off")); $("netGhost").innerHTML=""; return; }
+      if(!key){ nodeEls.forEach(el => el.classList.remove("on","off","center","pin")); edgeEls.forEach(el => el.classList.remove("on")); svg.classList.remove("focus"); return; }
       const nbs = g.nb.get(key) || new Set();
-      nodeEls.forEach((el,k) => { el.classList.toggle("on", k===key || nbs.has(k)); el.classList.toggle("off", !(k===key || nbs.has(k))); });
-      edgeEls.forEach((el,i) => { const e = g.E[i]; const hit = g.N[e.a].k===key || g.N[e.b].k===key; el.classList.toggle("on", hit); el.classList.toggle("off", !hit); });
-      // 그래프에 없는 연관어는 점선으로 잠깐 펼쳐 보이기
-      const n = g.N.find(x => x.k===key); const extra = ((S.view.related||{})[key]||[]).filter(([st]) => !nodeEls.has(st)).slice(0,6);
-      $("netGhost").innerHTML = n ? extra.map(([st,disp,c],i) => { const a = -Math.PI/2 + i*(2*Math.PI/Math.max(extra.length,1)); const x = n.x+Math.cos(a)*70, y = n.y+Math.sin(a)*52;
-        return `<line x1="${n.x.toFixed(1)}" y1="${n.y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3"/><text x="${x.toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle">${esc(disp)}</text>`; }).join("") : "";
-      nodeEls.forEach((el,k) => el.classList.toggle("pin", k===S.pin));
+      svg.classList.add("focus");
+      nodeEls.forEach((el,k) => { const hit = k===key || nbs.has(k); el.classList.toggle("on", hit); el.classList.toggle("center", k===key); el.classList.toggle("off", !hit); el.classList.toggle("pin", k===S.pin); });
+      edgeEls.forEach((el,i) => { const e = g.E[i]; el.classList.toggle("on", g.N[e.a].k===key || g.N[e.b].k===key); });
     }
     let hoverTimer = null;
     nodeEls.forEach((el, k) => {
       el.onmouseenter = () => { S.hover = k; highlight(k); clearTimeout(hoverTimer); hoverTimer = setTimeout(() => renderNetSide(k), 60); };
-      el.onmouseleave = () => { S.hover = null; if(S.pin){ highlight(S.pin); renderNetSide(S.pin); } else { highlight(null); renderNetSide(null); } };
+      el.onmouseleave = () => { S.hover = null; clearTimeout(hoverTimer); if(S.pin){ highlight(S.pin); renderNetSide(S.pin); } else { highlight(null); renderNetSide(null); } };
       el.onclick = (ev) => { ev.stopPropagation(); S.pin = (S.pin===k) ? null : k; highlight(S.pin||k); renderNetSide(S.pin||k); syncHash(); };
       el.ondblclick = (ev) => { ev.stopPropagation(); const hit = findKeyword(k); if(hit){ S.mode="keyword"; S.cat=hit.cat; S.kw=hit.o.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0, behavior:"smooth"}); } };
     });
     svg.onclick = () => { S.pin = null; highlight(null); renderNetSide(null); syncHash(); };
-    // 확대·이동
     let vb = [0,0,g.W,g.H], drag=null;
     const setVB = () => svg.setAttribute("viewBox", vb.map(v => v.toFixed(1)).join(" "));
     svg.addEventListener("wheel", ev => { ev.preventDefault(); const rect = svg.getBoundingClientRect(); const px = vb[0] + (ev.clientX-rect.left)/rect.width*vb[2], py = vb[1] + (ev.clientY-rect.top)/rect.height*vb[3];
       const f = ev.deltaY>0 ? 1.12 : 0.89; const nw = Math.min(g.W*2, Math.max(g.W/5, vb[2]*f)), nh = nw*g.H/g.W; vb = [px - (px-vb[0])*nw/vb[2], py - (py-vb[1])*nh/vb[3], nw, nh]; setVB(); }, {passive:false});
-    svg.addEventListener("pointerdown", ev => { if(ev.target.closest(".node")) return; drag = {x:ev.clientX, y:ev.clientY, vb:[...vb]}; svg.classList.add("drag"); svg.setPointerCapture(ev.pointerId); });
+    svg.addEventListener("pointerdown", ev => { if(ev.target.closest(".word")) return; drag = {x:ev.clientX, y:ev.clientY, vb:[...vb]}; svg.classList.add("drag"); svg.setPointerCapture(ev.pointerId); });
     svg.addEventListener("pointermove", ev => { if(!drag) return; const rect = svg.getBoundingClientRect(); vb[0] = drag.vb[0] - (ev.clientX-drag.x)/rect.width*vb[2]; vb[1] = drag.vb[1] - (ev.clientY-drag.y)/rect.height*vb[3]; setVB(); });
     svg.addEventListener("pointerup", () => { drag=null; svg.classList.remove("drag"); });
     if(S.pin && nodeEls.has(S.pin)){ highlight(S.pin); renderNetSide(S.pin); } else { S.pin = null; renderNetSide(null); }
