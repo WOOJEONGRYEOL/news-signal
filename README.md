@@ -1,5 +1,7 @@
 # 뉴스 시그널 (News Signal)
 
+**공유 주소: https://woojeongryeol.github.io/news-signal/** (30분마다 갱신)
+
 뉴스룸용 실시간 관심사 보드. 포털 실시간 검색어(구글 트렌드·네이트·줌), 언론 발행량(네이버 섹션·연합뉴스·구글 뉴스 피드), 실제 소비(네이버 언론사별 많이 본 기사)를 한 화면에 모아 **카테고리별 Top 10 키워드**를 보여주고, 키워드를 누르면 **관련 기사 목록**과 **시간대별 흐름**이 나옵니다. 과거 시점도 골라서 볼 수 있습니다.
 
 - 파이썬 표준 라이브러리만 씁니다. 설치할 패키지가 없고, API 키도 필요 없고, 비용도 0원입니다.
@@ -14,12 +16,20 @@ python3 -m newssignal collect     # 지금 한 번 수집 (약 30초)
 python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 ```
 
-30분마다 자동으로 쌓으려면 둘 중 하나:
+`python3`는 Homebrew의 3.11 이상이어야 합니다(macOS 기본 `/usr/bin/python3`는 3.9라 안내 문구와 함께 멈춥니다).
+
+## 자동 수집과 공유 (2026-09-12 등록 완료)
+
+이 맥에 LaunchAgent `com.woo.newssignal`이 등록되어 **30분마다** `scripts/run_auto.sh`가 돕니다: 수집 → `site/data` 변경분 커밋 → GitHub 푸시 → GitHub Actions(`.github/workflows/pages.yml`)가 `site/`를 Pages에 배포. 로그는 `logs/collect.log`.
 
 ```bash
-python3 -m newssignal loop --every 30          # 터미널을 켜둔 채로 반복
-bash scripts/install_launchagent.sh             # macOS 로그인 시 자동 실행(LaunchAgent) 등록
+launchctl list | grep com.woo.newssignal        # 상태 (두 번째 칸이 마지막 종료 코드, 0이면 정상)
+bash scripts/install_launchagent.sh              # 재등록 (스크립트나 간격을 바꿨을 때)
+launchctl bootout gui/$(id -u)/com.woo.newssignal   # 해제
+python3 -m newssignal loop --every 30            # LaunchAgent 대신 터미널에서 반복하고 싶을 때
 ```
+
+맥이 잠자거나 로그아웃돼 있으면 그 시간대는 건너뛰고, 깨어나면 한 번 돕니다. 저장소: https://github.com/WOOJEONGRYEOL/news-signal (Pages를 무료로 쓰려고 공개 저장소이며, 올라가는 건 공개 뉴스 데이터뿐입니다. `config.toml`·SQLite·로그는 올라가지 않습니다).
 
 수집이 쌓일수록 좋아집니다. **급상승** 신호는 지난 7일 평균과 비교하므로 하루쯤 지나야 의미가 생기고, 키워드별 **흐름 곡선**도 수집 횟수만큼 점이 찍힙니다.
 
@@ -78,9 +88,10 @@ site/data/days/        날짜별 스냅샷 순위(시계열용)
 site/data/extras/      날짜별 포털 원본·지역·우리 회사 랭킹
 site/data/articles/    날짜별 키워드 관련 기사
 data/stopwords.txt     불용어 추가 목록
-scripts/               자동 실행 스크립트
+scripts/               run_auto.sh(수집+푸시) · com.woo.newssignal.plist · install_launchagent.sh
+.github/workflows/     pages.yml — site/ 를 GitHub Pages 로 배포
 ```
 
-## 공유 방법
+## 다른 방법으로 보기
 
-`site/` 폴더를 통째로 올리면 됩니다. 사내 PC에서 보려면 `python3 -m newssignal serve --host 0.0.0.0`로 띄우고 `http://<이 맥의 IP>:8770/`로 접속합니다. GitHub Pages에 올리려면 `site/`를 저장소의 Pages 경로로 두고 수집 후 `site/data`를 푸시하면 됩니다(KBO 날씨 보드와 같은 방식).
+사내망에서 바로 보려면 `python3 -m newssignal serve --host 0.0.0.0`로 띄우고 `http://<이 맥의 IP>:8770/`로 접속합니다. `site/` 폴더는 정적 파일이라 어느 웹서버에 올려도 됩니다.
