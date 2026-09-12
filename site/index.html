@@ -57,10 +57,16 @@
   .seg{display:inline-flex;gap:2px;padding:4px;border-radius:999px;background:var(--glass2);border:1px solid var(--glass-border);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
   .seg button{padding:7px 16px;font-weight:600;color:var(--muted)}
   .seg button.on{background:var(--glass-hi);color:var(--text);box-shadow:var(--shadow-sm)}
-  .bar-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:0 6px 14px}
-  nav.tabs{display:flex;gap:6px;flex-wrap:wrap}
-  nav.tabs button{padding:6px 13px;color:var(--muted);background:var(--glass2);border:1px solid var(--glass-border)}
-  nav.tabs button.on{background:var(--text);color:var(--bg);border-color:transparent}
+  .controls{padding:0 6px 14px}
+  .seg.primary{padding:5px;gap:4px;box-shadow:var(--shadow-sm)}
+  .seg.primary button{padding:9px 22px;font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .seg.primary button.on{background:var(--text);color:var(--bg);box-shadow:none}
+  .subrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 0 14px;padding:4px 0 2px 14px;border-left:2px solid var(--line)}
+  .sublabel{font-size:11.5px;color:var(--dim);letter-spacing:.06em;font-weight:600}
+  nav.tabs{display:flex;gap:5px;flex-wrap:wrap}
+  nav.tabs button{padding:4px 11px;font-size:12.5px;color:var(--muted);background:transparent;border:1px solid transparent}
+  nav.tabs button:hover{background:var(--glass2)}
+  nav.tabs button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
   .grid{display:grid;grid-template-columns:minmax(380px,5fr) minmax(420px,7fr);gap:16px}
   @media (max-width:980px){.grid{grid-template-columns:1fr}}
   .panel{padding:18px 20px}
@@ -164,6 +170,10 @@
   @keyframes unfold{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
   ol.unfold li{animation:unfold .32s cubic-bezier(.2,.8,.2,1) both}
   .noanim ol.unfold li{animation:none}
+  .cyclebar{height:3px;border-radius:2px;background:var(--line);margin:8px 0 6px;overflow:hidden}
+  .cyclebar i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left;animation:cycle linear both}
+  @keyframes cycle{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .noanim .cyclebar i{animation:none;transform:scaleX(.35)}
   .rtitle{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .rtitle h2{font-size:20px;margin:0}
   .rnum{font-size:13px;color:var(--muted)}
@@ -192,13 +202,13 @@
     </div>
   </header>
   <div id="err"></div>
-  <div class="bar-row">
-    <div class="seg" id="modes">
+  <div class="controls">
+    <div class="seg primary" id="modes">
       <button data-mode="story" class="on">스토리</button>
       <button data-mode="keyword">키워드</button>
       <button data-mode="map">관계망</button>
     </div>
-    <nav class="tabs" id="tabs"></nav>
+    <div class="subrow"><span class="sublabel">분야</span><nav class="tabs" id="tabs"></nav></div>
   </div>
 
   <div class="grid" id="mainGrid">
@@ -813,7 +823,19 @@
   }
 
   // ---------- 지역 (실제 시·도 지도) ----------
-  let regionLeaveTimer = null, krBuilt = false;
+  let regionLeaveTimer = null, krBuilt = false, regionCycleTimer = null, regionCycleIdx = -1, regionHover = null;
+  const ROTATION = ["KR-11","KR-28","KR-41","KR-42","KR-43","KR-44","KR-30","KR-45","KR-29","KR-46","KR-47","KR-27","KR-31","KR-48","KR-26","KR-49"];
+  const CYCLE_MS = 4500;
+  function cycleList(){ const R = (S.view||{}).regions||{}; return ROTATION.filter(c => (R[c]||[]).length); }
+  function cycleStep(){
+    const list = cycleList(); if(!list.length) return;
+    regionCycleIdx = (regionCycleIdx + 1) % list.length;
+    const code = list[regionCycleIdx];
+    popRegion(code); renderRegionSide(code, true);
+  }
+  function startCycle(){ stopCycle(); if(S.region || regionHover || document.hidden) return; cycleStep(); regionCycleTimer = setInterval(cycleStep, CYCLE_MS); }
+  function stopCycle(){ if(regionCycleTimer){ clearInterval(regionCycleTimer); regionCycleTimer = null; } }
+  document.addEventListener("visibilitychange", () => { if(document.hidden) stopCycle(); else if(S.mode!==null && $("krSvg")) startCycle(); });
   function regionFill(items, code){
     if(code==="KR-50") return "rgba(120,130,150,.18)";
     if(!items.length) return "rgba(120,130,150,.12)";
@@ -831,16 +853,18 @@
       const svg = $("krSvg");
       svg.querySelectorAll("path").forEach(el => {
         const code = el.dataset.code;
-        el.onmouseenter = () => { clearTimeout(regionLeaveTimer); popRegion(code); renderRegionSide(code); };
-        el.onmouseleave = () => { if(S.region===code) return; regionLeaveTimer = setTimeout(() => { popRegion(S.region); renderRegionSide(S.region); }, 220); };
-        el.onclick = ev => { ev.stopPropagation(); S.region = (S.region===code) ? null : code; popRegion(S.region||code); renderRegionSide(S.region||code); svg.querySelectorAll("path").forEach(p2 => p2.classList.toggle("pinned", p2.dataset.code===S.region)); syncHash(); };
+        el.onmouseenter = () => { clearTimeout(regionLeaveTimer); regionHover = code; stopCycle(); popRegion(code); renderRegionSide(code); };
+        el.onmouseleave = () => { regionHover = null; if(S.region===code) return; };
+        el.onclick = ev => { ev.stopPropagation(); S.region = (S.region===code) ? null : code; svg.querySelectorAll("path").forEach(p2 => p2.classList.toggle("pinned", p2.dataset.code===S.region)); if(S.region){ stopCycle(); popRegion(code); renderRegionSide(code); } else { regionHover = null; startCycle(); } syncHash(); };
       });
-      svg.onclick = () => { S.region = null; popRegion(null); renderRegionSide(null); svg.querySelectorAll("path").forEach(p2 => p2.classList.remove("pinned")); syncHash(); };
-      svg.onmouseleave = () => { regionLeaveTimer = setTimeout(() => { popRegion(S.region); renderRegionSide(S.region); }, 220); };
+      svg.onclick = () => { S.region = null; svg.querySelectorAll("path").forEach(p2 => p2.classList.remove("pinned")); syncHash(); regionHover = null; startCycle(); };
+      svg.onmouseleave = () => { regionHover = null; clearTimeout(regionLeaveTimer); regionLeaveTimer = setTimeout(() => { if(S.region){ popRegion(S.region); renderRegionSide(S.region); } else startCycle(); }, 900); };
     }
     $("krSvg").querySelectorAll("path").forEach(el => { const code = el.dataset.code; el.style.fill = regionFill(R[code]||[], code); el.classList.toggle("pinned", code===S.region); });
     if(S.region && !M.regions[S.region]) S.region = null;
-    popRegion(S.region); renderRegionSide(S.region);
+    if(S.region){ stopCycle(); popRegion(S.region); renderRegionSide(S.region); }
+    else if(location.hash.includes("noanim")){ stopCycle(); regionCycleIdx = -1; cycleStep(); }
+    else startCycle();
   }
   function popRegion(code){
     const g = $("krPaths"); if(!g) return;
@@ -849,7 +873,7 @@
     const el = g.querySelector(`path[data-code="${code}"]`); if(!el) return;
     el.classList.add("pop"); g.appendChild(el);   // 맨 위로 올려 튀어나온 느낌
   }
-  function renderRegionSide(code){
+  function renderRegionSide(code, auto){
     const v = S.view, names = v.region_names||S.manifest.region_names||{}, R = v.regions||{}, el = $("regionDetail");
     if(!code){
       const rows = Object.entries(R).map(([c, items]) => ({c, name:names[c]||c, loc:items.filter(i => !i.nat && i.n<=3).length, top:items[0]})).sort((a,b) => b.loc - a.loc || (a.name>b.name?1:-1)).slice(0,6);
@@ -860,7 +884,9 @@
       return;
     }
     const items = R[code]||[], loc = items.filter(i => !i.nat && i.n<=3).length;
-    el.innerHTML = `<div class="rtitle"><h2>${esc(names[code]||code)}</h2><span class="rnum">급상승 검색어 ${items.length}개 · 이 지역만 ${loc}개${S.region===code?" · 고정됨":""}</span></div>` +
+    const list = cycleList(), pos = list.indexOf(code);
+    el.innerHTML = `<div class="rtitle"><h2>${esc(names[code]||code)}</h2><span class="rnum">급상승 검색어 ${items.length}개 · 이 지역만 ${loc}개${S.region===code ? " · 고정됨(빈 곳을 누르면 순환 재개)" : auto ? ` · 자동 순환 ${pos+1}/${list.length} · 올리면 멈춤, 누르면 고정` : ""}</span></div>` +
+      (auto ? `<div class="cyclebar"><i style="animation-duration:${CYCLE_MS}ms"></i></div>` : "") +
       (items.length ? `<ol class="plist unfold">${items.map((i,idx) => `<li style="animation-delay:${idx*35}ms"><span class="n">${i.r}</span><span class="k link" data-q="${esc(i.k)}">${esc(i.k)}</span><span class="m">${fmtTraffic(i.tr)}</span>${i.nat?`<span class="tag nat">전국</span>`:(i.n<=3?`<span class="tag loc">${i.n===1?"이 지역만":"지역 "+i.n+"곳"}</span>`:`<span class="tag">지역 ${i.n}곳</span>`)}</li>`).join("")}</ol>
       <p class="chartnote" style="margin-top:8px">‘전국’은 전국 급상승 목록에도 있는 검색어, ‘이 지역만’·‘지역 n곳’은 전국 목록엔 없고 일부 시·도에서만 뜨는 검색어입니다. 검색어를 누르면 관련 키워드·스토리로 이동합니다.</p>`
       : `<div class="empty">${code==="KR-50" ? "세종은 구글 트렌드가 지역 데이터를 제공하지 않습니다." : "이 시점에 저장된 지역 데이터가 없습니다."}</div>`);
