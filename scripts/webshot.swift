@@ -1,5 +1,5 @@
 // 대시보드 확인용 스크린샷: WebKit으로 URL을 열어 JS까지 실행한 뒤 PNG로 저장.
-// usage: webshot <url> <out.png> [width=1400] [height=1000] [wait-seconds=4]
+// usage: webshot <url> <out.png> [width=1400] [height=1000] [wait-seconds=4] [transparent]
 // 빌드: swiftc -O -o scripts/webshot scripts/webshot.swift
 import Cocoa
 import WebKit
@@ -13,6 +13,7 @@ let out = args[2]
 let width = args.count > 3 ? Double(args[3]) ?? 1400 : 1400
 let height = args.count > 4 ? Double(args[4]) ?? 1000 : 1000
 let wait = args.count > 5 ? Double(args[5]) ?? 4 : 4
+let transparent = args.count > 6 && args[6] == "transparent"
 
 final class Shot: NSObject, WKNavigationDelegate {
     let view: WKWebView
@@ -20,6 +21,7 @@ final class Shot: NSObject, WKNavigationDelegate {
         let cfg = WKWebViewConfiguration()
         view = WKWebView(frame: NSRect(x: 0, y: 0, width: width, height: height), configuration: cfg)
         super.init()
+        if transparent { view.setValue(false, forKey: "drawsBackground") }
         view.navigationDelegate = self
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

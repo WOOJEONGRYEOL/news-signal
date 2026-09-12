@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}svg{display:block}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#22357a"/><stop offset="0.55" stop-color="#121d4a"/><stop offset="1" stop-color="#070c22"/></linearGradient>
+    <radialGradient id="glow" cx="0.68" cy="0.28" r="0.45"><stop offset="0" stop-color="#5fd6ff" stop-opacity="0.38"/><stop offset="1" stop-color="#5fd6ff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c7d2e4"/></linearGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7f8fae"/><stop offset="1" stop-color="#d6deec"/></linearGradient>
+    <linearGradient id="mast" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9aa8c2"/><stop offset="0.5" stop-color="#e3e9f4"/><stop offset="1" stop-color="#8b99b5"/></linearGradient>
+    <linearGradient id="wave" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#6fe3ff"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+    <radialGradient id="ground" cx="0.5" cy="0.2" r="0.8"><stop offset="0" stop-color="#1a2757"/><stop offset="1" stop-color="#0a1130"/></radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#000" flood-opacity="0.45"/></filter>
+    <clipPath id="sq"><rect x="0" y="0" width="1024" height="1024" rx="228" ry="228"/></clipPath>
+  </defs>
+  <g clip-path="url(#sq)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <rect width="1024" height="1024" fill="url(#glow)"/>
+    <g fill="#ffffff">
+      <circle cx="150" cy="170" r="4" opacity=".7"/><circle cx="300" cy="110" r="3" opacity=".5"/><circle cx="880" cy="160" r="3.5" opacity=".6"/>
+      <circle cx="760" cy="90" r="2.5" opacity=".5"/><circle cx="120" cy="420" r="3" opacity=".45"/><circle cx="940" cy="420" r="2.5" opacity=".4"/>
+      <circle cx="220" cy="300" r="2" opacity=".5"/><circle cx="640" cy="60" r="2" opacity=".4"/>
+    </g>
+    <ellipse cx="512" cy="980" rx="720" ry="200" fill="url(#ground)"/>
+    <ellipse cx="512" cy="985" rx="720" ry="200" fill="none" stroke="#2c3d7a" stroke-width="3" opacity=".6"/>
+    <!-- 전파 -->
+    <g transform="translate(560 470) rotate(-38)" fill="none" stroke="url(#wave)" stroke-linecap="round">
+      <path d="M 90 -110 A 142 142 0 0 1 90 110" stroke-width="28" opacity=".95"/>
+      <path d="M 165 -190 A 252 252 0 0 1 165 190" stroke-width="26" opacity=".62"/>
+      <path d="M 240 -272 A 362 362 0 0 1 240 272" stroke-width="24" opacity=".34"/>
+    </g>
+    <!-- 접시 안테나 -->
+    <g transform="translate(430 600)" filter="url(#shadow)">
+      <g transform="rotate(-38)">
+        <path d="M -30 -262 Q -250 0 -30 262 L 0 262 Q -190 0 0 -262 Z" fill="url(#bowl)"/>
+        <ellipse cx="0" cy="0" rx="46" ry="262" fill="url(#rim)"/>
+        <ellipse cx="6" cy="0" rx="30" ry="222" fill="#5f6f92" opacity=".55"/>
+        <rect x="-4" y="-7" width="150" height="14" rx="7" fill="#e6ecf7"/>
+        <circle cx="152" cy="0" r="24" fill="#ffffff"/>
+        <circle cx="152" cy="0" r="10" fill="#6fe3ff"/>
+      </g>
+      <rect x="-22" y="20" width="44" height="270" rx="10" fill="url(#mast)"/>
+      <path d="M -10 120 L -150 300 L -110 300 L 0 160 Z" fill="#aab6cf"/>
+      <path d="M 10 120 L 150 300 L 110 300 L 0 160 Z" fill="#aab6cf"/>
+      <rect x="-190" y="290" width="380" height="34" rx="17" fill="#d4dced"/>
+    </g>
+  </g>
+</svg>
+</body></html>

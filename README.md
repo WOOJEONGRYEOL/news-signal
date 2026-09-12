@@ -119,6 +119,10 @@ scripts/               run_auto.sh(수집+푸시) · com.woo.newssignal.plist ·
 .github/workflows/     pages.yml — site/ 를 GitHub Pages 로 배포
 ```
 
+## 바탕화면 런처
+
+`~/Desktop/News Signal.app`(접시 안테나·전파 아이콘)을 더블클릭하면 이 맥의 로컬 대시보드(8770)를 엽니다. 서버가 꺼져 있으면 켜고 열고, 그래도 안 되면 공개 주소를 엽니다. 다시 만들려면 `bash scripts/build_launcher.sh`(아이콘 원본은 `assets/icon.html`).
+
 ## 다른 방법으로 보기
 
 사내망에서 바로 보려면 `python3 -m newssignal serve --host 0.0.0.0`로 띄우고 `http://<이 맥의 IP>:8770/`로 접속합니다. `site/` 폴더는 정적 파일이라 어느 웹서버에 올려도 됩니다.
