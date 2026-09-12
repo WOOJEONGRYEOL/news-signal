@@ -122,26 +122,24 @@
   .crumbs{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin:4px 0 8px}
   .crumbs b{color:var(--text)}
   .crumbs button{padding:2px 10px;font-size:12px;background:var(--glass2);border:1px solid var(--glass-border)}
-  /* 관계망(워드클라우드 + 호버 시 관계) */
+  /* 관계망(워드클라우드 + 호버 시 중앙 확대) */
   .netgrid{display:grid;grid-template-columns:minmax(500px,8fr) minmax(320px,4fr);gap:16px}
   @media (max-width:980px){.netgrid{grid-template-columns:1fr}}
   .net{width:100%;height:640px;display:block;border-radius:16px;background:var(--glass2);cursor:grab;touch-action:none}
   .net.drag{cursor:grabbing}
-  .net line{stroke:var(--accent);stroke-opacity:0;transition:stroke-opacity .18s}
-  .net line.on{stroke-opacity:.55}
-  .net .word{cursor:pointer;transition:opacity .18s}
-  .net .word rect{fill:transparent;transition:fill .18s}
-  .net .word text{fill:var(--text);font-weight:700;pointer-events:none;transition:fill .18s;paint-order:stroke;stroke:var(--bg);stroke-width:2.5px;stroke-linejoin:round}
-  .net .word.sec text{font-weight:500;fill:var(--muted)}
-  .net.focus .word.off{opacity:.16}
+  .net #netLinks line{stroke:var(--accent);stroke-opacity:.55;stroke-width:1.6}
+  .net #netLinks line.dashed{stroke-dasharray:4 4;stroke-opacity:.45}
+  .net .word{cursor:pointer}
+  .net .word rect{fill:transparent;transition:fill .2s,stroke .2s}
+  .net .word text{fill:var(--text);font-weight:700;pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:2.5px;stroke-linejoin:round}
   .net .word.on text{fill:var(--accent)!important}
   .net .word.on rect{fill:var(--accent-soft)}
-  .net .word.center rect{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);stroke-width:1.5}
+  .net .word.center text{fill:var(--accent)!important;font-weight:800}
+  .net .word.center rect{fill:var(--accent);fill-opacity:.14;stroke:var(--accent);stroke-width:1.5}
   .net .word.pin rect{stroke:var(--text);stroke-width:1.5}
   .net .ghost{cursor:pointer}
-  .net .ghost line{stroke:var(--accent);stroke-opacity:.45;stroke-dasharray:3 3}
-  .net .ghost rect{fill:var(--glass-hi);stroke:var(--accent);stroke-opacity:.5;stroke-width:1}
-  .net .ghost text{fill:var(--accent);font-weight:600;pointer-events:none}
+  .net .ghost rect{fill:var(--glass-hi);stroke:var(--accent);stroke-opacity:.55;stroke-width:1;transition:fill .2s}
+  .net .ghost text{fill:var(--accent);font-weight:700;pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:2px}
   .net .ghost:hover rect{fill:var(--accent-soft)}
   .nethelp{color:var(--dim);font-size:12px;margin-top:8px;display:flex;gap:14px;flex-wrap:wrap}
   .nethelp i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-block:-1px;vertical-align:-1px}
@@ -216,7 +214,7 @@
     <section class="glass panel">
       <h2>키워드 관계망 <span class="sub" id="mapSub"></span></h2>
       <div id="net"></div>
-      <div class="nethelp"><span>글자 크기는 점수, 색은 카테고리 · 가까이 놓인 말일수록 같이 다뤄진 말입니다</span><span>글자에 마우스를 올리면 함께 다뤄진 말들이 주변에 나타나고(클라우드에 없던 말도 포함) 관계된 키워드가 밝아지며, 오른쪽에 관련 기사가 뜹니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
+      <div class="nethelp"><span>점수가 높을수록 크고 가운데에 · 색은 카테고리, 같은 분야는 같은 방향</span><span>글자에 마우스를 올리면 그 말이 가운데로 오고 함께 다뤄진 말들이 읽기 좋은 크기로 둘레에 펼쳐지며, 오른쪽에 관련 기사가 뜹니다. 커서가 벗어나면 제자리로 돌아갑니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
     </section>
     <section class="glass panel side" id="netSide"></section>
   </div>
@@ -590,65 +588,110 @@
   }
   function renderNetwork(){
     if(!S.graph) S.graph = buildGraph();
-    const g = S.graph, v = S.view, rel = v.related||{};
-    $("mapSub").textContent = `${S.cat} · 주요 키워드 ${g.N.length}개 · 글자에 마우스를 올리면 관계된 말이 나타납니다`;
+    const g = S.graph, v = S.view, rel = v.related||{}, cx = g.W/2, cy = g.H/2;
+    $("mapSub").textContent = `${S.cat} · 주요 키워드 ${g.N.length}개 · 글자에 마우스를 올리면 그 말이 가운데로 오고 연관어가 펼쳐집니다`;
+    for(const n of g.N){ n.home = {x:n.x, y:n.y, fs:n.fs, op:1}; n.cur = {...n.home}; }
     $("net").innerHTML = `<svg class="net" id="netSvg" viewBox="0 0 ${g.W} ${g.H}">
-      <g id="netEdges">${g.E.map((e,i) => `<line data-i="${i}" x1="${g.N[e.a].x.toFixed(1)}" y1="${g.N[e.a].y.toFixed(1)}" x2="${g.N[e.b].x.toFixed(1)}" y2="${g.N[e.b].y.toFixed(1)}" stroke-width="${(1+3*e.w/g.wmax).toFixed(1)}"/>`).join("")}</g>
-      <g id="netGhost"></g>
-      <g id="netNodes">${g.N.map(n => `<g class="word" data-k="${esc(n.k)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><rect x="${(-n.w/2-4).toFixed(1)}" y="${(-n.h/2).toFixed(1)}" width="${(n.w+8).toFixed(1)}" height="${n.h.toFixed(1)}" rx="10"/><text y="${(n.fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${n.fs.toFixed(1)}" style="fill:${CAT_COLOR[n.cat]||"#999"}">${esc(n.text)}</text></g>`).join("")}</g>
+      <g id="netLinks"></g><g id="netGhost"></g>
+      <g id="netNodes">${g.N.map(n => `<g class="word" data-k="${esc(n.k)}"><rect rx="10"/><text text-anchor="middle" style="fill:${CAT_COLOR[n.cat]||"#999"}">${esc(n.text)}</text></g>`).join("")}</g>
     </svg>`;
     const svg = $("netSvg");
     const nodeEls = new Map([...svg.querySelectorAll(".word")].map(el => [el.dataset.k, el]));
-    const edgeEls = [...svg.querySelectorAll("#netEdges line")];
-    let clearTimer = null, hoverTimer = null;
-    function showGhosts(key){
-      // 클라우드에 없는 연관어를 호버한 말 주변 빈자리에 띄운다
+    let ghosts = [], links = [], focus = null, anim = null, enterTimer = null, leaveTimer = null;
+    const ease = p => p<0.5 ? 4*p*p*p : 1 - Math.pow(-2*p+2, 3)/2;
+    function drawWord(el, n, c){
+      const w = textW(n.text, c.fs) + 10, h = c.fs*1.3;
+      el.setAttribute("transform", `translate(${c.x.toFixed(1)},${c.y.toFixed(1)})`);
+      const r = el.firstElementChild, t = el.lastElementChild;
+      r.setAttribute("x", (-w/2-4).toFixed(1)); r.setAttribute("y", (-h/2).toFixed(1)); r.setAttribute("width", (w+8).toFixed(1)); r.setAttribute("height", h.toFixed(1));
+      t.setAttribute("font-size", c.fs.toFixed(1)); t.setAttribute("y", (c.fs*0.35).toFixed(1));
+      el.style.opacity = c.op.toFixed(3);
+    }
+    function redraw(){
+      for(const n of g.N) drawWord(nodeEls.get(n.k), n, n.cur);
+      for(const gh of ghosts) drawWord(gh.el, gh, gh.cur);
+      const c = focus ? g.N.find(x => x.k===focus).cur : null;
+      for(const l of links){ const to = l.node.cur; l.el.setAttribute("x1", c.x.toFixed(1)); l.el.setAttribute("y1", c.y.toFixed(1)); l.el.setAttribute("x2", to.x.toFixed(1)); l.el.setAttribute("y2", to.y.toFixed(1)); l.el.style.opacity = (to.op*0.9).toFixed(3); }
+    }
+    const NOANIM = location.hash.includes("noanim");   // 스크린샷 검증용: 애니메이션 없이 최종 상태로
+    const raf = fn => NOANIM ? setTimeout(() => fn(performance.now() + 1e6), 0) : requestAnimationFrame(fn);
+    const caf = id => NOANIM ? clearTimeout(id) : cancelAnimationFrame(id);
+    function tween(items, ms, done){
+      if(anim) caf(anim);
+      const from = items.map(it => ({...it.obj})), t0 = performance.now();
+      const step = now => { const p = Math.min(1, (now-t0)/ms), e = ease(p);
+        items.forEach((it,i) => { for(const k of ["x","y","fs","op"]) it.obj[k] = from[i][k] + (it.to[k]-from[i][k])*e; });
+        redraw(); if(p<1) anim = raf(step); else { anim = null; if(done) done(); } };
+      anim = raf(step);
+    }
+    function relatedOf(key){
+      const list = (rel[key]||[]).slice(0, 12), cmax = Math.max(1, ...list.map(x => x[2]));
+      return {list, cmax};
+    }
+    function enterFocus(key){ try { enterFocusInner(key); } catch(e){ $("err").innerHTML += `<div class="err">enterFocus 오류: ${esc(e.message)} · ${esc((e.stack||"").split("\n").slice(0,2).join(" | "))}</div>`; } }
+    function enterFocusInner(key){
       const n = g.N.find(x => x.k===key); if(!n) return;
-      const list = (rel[key]||[]).filter(([st]) => !nodeEls.has(st)).slice(0, 8);
-      const cmax = Math.max(1, ...list.map(x => x[2]));
-      const occupied = [...g.N];
-      const out = [];
+      const prev = focus; focus = key;
+      const {list, cmax} = relatedOf(key);
+      // 이전 고스트 정리
+      for(const gh of ghosts) gh.el.remove(); ghosts = []; for(const l of links) l.el.remove(); links = [];
+      const items = [{obj:n.cur, to:{x:cx, y:cy, fs:Math.max(50, n.fs*1.3), op:1}}];
+      const related = [];
       list.forEach(([st, disp, c], i) => {
-        const fs = 12 + 6*(c/cmax); const gh = {k:st, text:disp, c, fs, w:textW(disp, fs)+12, h:fs*1.5, x:n.x, y:n.y};
-        const a0 = -Math.PI/2 + i*(2*Math.PI/Math.max(list.length,1));
-        let done = false;
-        for(let t=0; t<900 && !done; t++){ const r = (n.w/2 + 26) + t*0.6, a = a0 + t*0.11; gh.x = n.x + Math.cos(a)*r*1.25; gh.y = n.y + Math.sin(a)*r*0.7;
-          if(gh.x-gh.w/2 < 6 || gh.x+gh.w/2 > g.W-6 || gh.y-gh.h/2 < 6 || gh.y+gh.h/2 > g.H-6) continue;
-          if(!occupied.some(o => collides(gh, o, 8, 4))) done = true; }
-        if(done){ occupied.push(gh); out.push(gh); }
+        const M = list.length, a = -Math.PI/2 + i*(2*Math.PI/M), inner = i%2===0;
+        const rx = inner ? 280 : 400, ry = inner ? 150 : 215;
+        const to = {x: cx + Math.cos(a)*rx, y: cy + Math.sin(a)*ry, fs: 18 + 16*(c/cmax), op:1};
+        const inCloud = g.N.find(x => x.k===st);
+        if(inCloud){ items.push({obj:inCloud.cur, to}); related.push({node:inCloud, dashed:false, k:st}); }
+        else {
+          const el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.setAttribute("class", "ghost"); el.dataset.k = st; el.dataset.d = disp;
+          el.innerHTML = `<rect rx="12"/><text text-anchor="middle"><title>‘${esc(n.text)}’와 함께 등장 ${c}건</title>${esc(disp)}</text>`;
+          $("netGhost").appendChild(el);
+          const gh = {k:st, text:disp, c, el, cur:{x:cx, y:cy, fs:12, op:0}};
+          drawWord(el, gh, gh.cur);
+          ghosts.push(gh); items.push({obj:gh.cur, to}); related.push({node:gh, dashed:true, k:st});
+          el.onmouseenter = () => clearTimeout(leaveTimer);
+          el.onmouseleave = () => { if(!S.pin) scheduleLeave(); };
+          el.onclick = ev => { ev.stopPropagation(); renderNetSide(st, key, disp); };
+        }
       });
-      $("netGhost").innerHTML = out.map(gh => `<g class="ghost" data-k="${esc(gh.k)}" data-d="${esc(gh.text)}" transform="translate(${gh.x.toFixed(1)},${gh.y.toFixed(1)})"><line x1="${(n.x-gh.x).toFixed(1)}" y1="${(n.y-gh.y).toFixed(1)}" x2="0" y2="0"/><rect x="${(-gh.w/2).toFixed(1)}" y="${(-gh.h/2).toFixed(1)}" width="${gh.w.toFixed(1)}" height="${gh.h.toFixed(1)}" rx="${(gh.h/2).toFixed(1)}"/><text y="${(gh.fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${gh.fs.toFixed(1)}"><title>‘${esc(n.text)}’와 함께 등장 ${gh.c}건</title>${esc(gh.text)}</text></g>`).join("");
-      $("netGhost").querySelectorAll(".ghost").forEach(el => {
-        el.onmouseenter = () => { clearTimeout(clearTimer); };
-        el.onmouseleave = () => { if(!S.pin) scheduleClear(); };
-        el.onclick = (ev) => { ev.stopPropagation(); renderNetSide(el.dataset.k, key, el.dataset.d); };
-      });
+      const relSet = new Set(related.map(r => r.k));
+      for(const o of g.N){ if(o.k===key || relSet.has(o.k)) continue; items.push({obj:o.cur, to:{x: cx + (o.home.x-cx)*1.45, y: cy + (o.home.y-cy)*1.45, fs:o.home.fs*0.7, op:0.12}}); }
+      for(const r of related){ const el = document.createElementNS("http://www.w3.org/2000/svg", "line"); el.setAttribute("class", r.dashed ? "dashed" : ""); $("netLinks").appendChild(el); links.push({el, node:r.node}); }
+      nodeEls.forEach((el,k) => { el.classList.toggle("center", k===key); el.classList.toggle("on", relSet.has(k)); el.classList.toggle("pin", k===S.pin); });
+      tween(items, prev ? 420 : 380);
+      renderNetSide(key);
     }
-    function highlight(key){
-      clearTimeout(clearTimer);
-      if(!key){ nodeEls.forEach(el => el.classList.remove("on","off","center","pin")); edgeEls.forEach(el => el.classList.remove("on")); svg.classList.remove("focus"); $("netGhost").innerHTML=""; return; }
-      const nbs = g.nb.get(key) || new Set();
-      svg.classList.add("focus");
-      nodeEls.forEach((el,k) => { const hit = k===key || nbs.has(k); el.classList.toggle("on", hit); el.classList.toggle("center", k===key); el.classList.toggle("off", !hit); el.classList.toggle("pin", k===S.pin); });
-      edgeEls.forEach((el,i) => { const e = g.E[i]; el.classList.toggle("on", g.N[e.a].k===key || g.N[e.b].k===key); });
-      showGhosts(key);
+    function exitFocus(){
+      if(!focus) return;
+      focus = null;
+      const items = g.N.map(o => ({obj:o.cur, to:{...o.home}}));
+      for(const gh of ghosts) items.push({obj:gh.cur, to:{x:cx, y:cy, fs:12, op:0}});
+      nodeEls.forEach(el => el.classList.remove("center","on","pin"));
+      const gs = ghosts, ls = links; ghosts = []; links = [];
+      // 선은 바로 사라지고, 고스트는 가운데로 모이며 사라진 뒤 제거
+      for(const l of ls) l.el.remove();
+      tween(items, 360, () => { for(const gh of gs) gh.el.remove(); });
+      renderNetSide(null);
     }
-    function scheduleClear(){ clearTimeout(clearTimer); clearTimer = setTimeout(() => { if(S.pin){ highlight(S.pin); renderNetSide(S.pin); } else { highlight(null); renderNetSide(null); } }, 220); }
+    function scheduleLeave(){ clearTimeout(leaveTimer); leaveTimer = setTimeout(() => { if(S.pin) return; exitFocus(); }, 280); }
     nodeEls.forEach((el, k) => {
-      el.onmouseenter = () => { clearTimeout(clearTimer); S.hover = k; highlight(k); clearTimeout(hoverTimer); hoverTimer = setTimeout(() => renderNetSide(k), 60); };
-      el.onmouseleave = () => { S.hover = null; clearTimeout(hoverTimer); scheduleClear(); };
-      el.onclick = (ev) => { ev.stopPropagation(); S.pin = (S.pin===k) ? null : k; highlight(S.pin||k); renderNetSide(S.pin||k); syncHash(); };
-      el.ondblclick = (ev) => { ev.stopPropagation(); const hit = findKeyword(k); if(hit){ S.mode="keyword"; S.cat=hit.cat; S.kw=hit.o.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0, behavior:"smooth"}); } };
+      el.onmouseenter = () => { clearTimeout(leaveTimer); clearTimeout(enterTimer); if(focus===k) return; if(focus && el.classList.contains("on")) return; enterTimer = setTimeout(() => enterFocus(k), 110); };
+      el.onmouseleave = () => { clearTimeout(enterTimer); scheduleLeave(); };
+      el.onclick = ev => { ev.stopPropagation(); clearTimeout(enterTimer); if(focus && focus!==k){ S.pin = k; enterFocus(k); syncHash(); return; } S.pin = (S.pin===k) ? null : k; if(S.pin){ if(focus!==k) enterFocus(k); } syncHash(); nodeEls.forEach((e2,k2) => e2.classList.toggle("pin", k2===S.pin)); };
+      el.ondblclick = ev => { ev.stopPropagation(); const hit = findKeyword(k); if(hit){ S.mode="keyword"; S.cat=hit.cat; S.kw=hit.o.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0, behavior:"smooth"}); } };
     });
-    svg.onclick = () => { S.pin = null; highlight(null); renderNetSide(null); syncHash(); };
+    svg.onclick = () => { S.pin = null; exitFocus(); syncHash(); };
+    svg.onmouseleave = () => { if(!S.pin) scheduleLeave(); };
     let vb = [0,0,g.W,g.H], drag=null;
-    const setVB = () => svg.setAttribute("viewBox", vb.map(v => v.toFixed(1)).join(" "));
+    const setVB = () => svg.setAttribute("viewBox", vb.map(x => x.toFixed(1)).join(" "));
     svg.addEventListener("wheel", ev => { ev.preventDefault(); const rect = svg.getBoundingClientRect(); const px = vb[0] + (ev.clientX-rect.left)/rect.width*vb[2], py = vb[1] + (ev.clientY-rect.top)/rect.height*vb[3];
       const f = ev.deltaY>0 ? 1.12 : 0.89; const nw = Math.min(g.W*2, Math.max(g.W/5, vb[2]*f)), nh = nw*g.H/g.W; vb = [px - (px-vb[0])*nw/vb[2], py - (py-vb[1])*nh/vb[3], nw, nh]; setVB(); }, {passive:false});
     svg.addEventListener("pointerdown", ev => { if(ev.target.closest(".word,.ghost")) return; drag = {x:ev.clientX, y:ev.clientY, vb:[...vb]}; svg.classList.add("drag"); svg.setPointerCapture(ev.pointerId); });
     svg.addEventListener("pointermove", ev => { if(!drag) return; const rect = svg.getBoundingClientRect(); vb[0] = drag.vb[0] - (ev.clientX-drag.x)/rect.width*vb[2]; vb[1] = drag.vb[1] - (ev.clientY-drag.y)/rect.height*vb[3]; setVB(); });
     svg.addEventListener("pointerup", () => { drag=null; svg.classList.remove("drag"); });
-    if(S.pin && nodeEls.has(S.pin)){ highlight(S.pin); renderNetSide(S.pin); } else { S.pin = null; renderNetSide(null); }
+    redraw();
+    if(S.pin && nodeEls.has(S.pin)) enterFocus(S.pin); else { S.pin = null; renderNetSide(null); }
   }
   function renderNetSide(key, origin, ghostText){
     const v = S.view, g = S.graph, el = $("netSide");
@@ -786,6 +829,7 @@
     try { const m = await getJSON("data/manifest.json"); if(m.latest !== (S.manifest||{}).latest){ if(S.view && S.view.isLive) await loadLive(); else { S.manifest = m; fillTimeSelects(); } } } catch(e){}
   }, 60000);
 
+  window.addEventListener("error", e => { const d = $("err"); if(d) d.innerHTML += `<div class="err">스크립트 오류: ${esc(e.message)} (${esc((e.filename||"").split("/").pop())}:${e.lineno})</div>`; });
   applyHash();
   loadLive().catch(showErr);
 })();
