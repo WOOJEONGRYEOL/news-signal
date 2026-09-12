@@ -155,15 +155,18 @@
   ol.plist .k.link{cursor:pointer}
   .regions{display:grid;grid-template-columns:minmax(300px,2fr) minmax(280px,3fr);gap:16px;margin-top:16px}
   @media (max-width:980px){.regions{grid-template-columns:1fr}}
-  .map{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  .tile{background:var(--glass2);border:1px solid var(--glass-border);border-radius:14px;padding:9px 10px;min-height:70px;cursor:pointer;position:relative}
-  .tile:hover{background:var(--glass-hi)}
-  .tile.sel{outline:2px solid var(--accent);outline-offset:-2px}
-  .tile .nm{font-weight:700;font-size:13px}
-  .tile .top{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
-  .tile .loc{position:absolute;right:8px;top:8px;font-size:10.5px;padding:0 6px;border-radius:999px;background:var(--spike);color:#fff;font-weight:700}
-  .tile.l0 .loc{display:none}
-  .tile.blank{visibility:hidden}
+  .kr{width:100%;max-height:640px;display:block}
+  .kr path{stroke:var(--bg);stroke-width:1.2;stroke-linejoin:round;cursor:pointer;transform-box:fill-box;transform-origin:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),filter .28s,fill .2s}
+  .kr path.pop{transform:scale(1.07);filter:drop-shadow(0 10px 18px rgba(20,30,60,.28));stroke:var(--text);stroke-width:1.6}
+  .kr path.pinned{stroke:var(--accent);stroke-width:2}
+  .kr text{pointer-events:none;font-size:12px;font-weight:700;fill:var(--text);paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
+  .kr text.sm{font-size:10px;font-weight:600}
+  @keyframes unfold{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  ol.unfold li{animation:unfold .32s cubic-bezier(.2,.8,.2,1) both}
+  .noanim ol.unfold li{animation:none}
+  .rtitle{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .rtitle h2{font-size:20px;margin:0}
+  .rnum{font-size:13px;color:var(--muted)}
   .tag{font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
   .tag.loc{color:var(--spike);border-color:rgba(240,165,42,.5)} .tag.nat{color:var(--accent);border-color:rgba(10,122,255,.4)}
   .legend{margin-top:16px;color:var(--muted);font-size:13px}
@@ -228,8 +231,9 @@
   </div>
 
   <div class="regions">
-    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별</span></h2><div class="map" id="map"></div></section>
-    <section class="glass panel" id="regionDetail"><div class="empty">지도를 누르면 그 지역의 급상승 검색어가 나옵니다. 주황 숫자는 전국 목록엔 없고 그 지역에서만 뜨는 검색어 수입니다.</div></section>
+    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · 권역에 마우스를 올려 보세요</span></h2><div id="krmap"></div>
+      <div class="nethelp"><span><i style="background:rgba(240,165,42,.85)"></i>진할수록 그 지역에서만 뜨는 검색어가 많음</span><span><i style="background:rgba(10,122,255,.25)"></i>전국 목록과 같은 지역</span><span><i style="background:rgba(120,130,150,.25)"></i>세종은 구글 트렌드 미지원</span></div></section>
+    <section class="glass panel" id="regionDetail"></section>
   </div>
 
   <section class="glass panel legend">
@@ -241,11 +245,12 @@
       <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 처음 등장 후 3시간 안이거나 직전보다 기사가 늘었는지(<span id="sK"></span>)를 더한 값입니다.</p>
     <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 주요 키워드만 워드클라우드처럼 펼쳐 둔 화면입니다. 글자에 마우스를 올리면 그 말과 함께 다뤄진 연관어들이 주변에 나타나고(클라우드에 없던 말도 포함), 관계된 키워드가 밝아지며 관련 기사가 뜹니다.</p>
     <p><b>변동</b>은 직전 수집 대비 순위 이동, G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다. 가중치는 <code>config.toml</code>에서 바꿀 수 있습니다.</p>
-    <p>수집은 30분마다 한 번입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
+    <p>수집은 30분마다 한 번입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음. 지도 경계는 Natural Earth 자료(퍼블릭 도메인)를 단순화한 것). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
     <p class="foot" id="foot"></p>
   </section>
 </div>
 
+<script src="kr-map.js"></script>
 <script>
 (function(){
   const CATS = ["전체","정치","경제","사회","생활/문화","세계","IT/과학","스포츠","연예"];
@@ -807,24 +812,59 @@
     $("pNaver").innerHTML = rows.map(r => `<li><span class="n">${S.nvMode==="home"?r.r:""}</span><span class="k"><a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)}</a></span><span class="m">${S.nvMode==="home"?fmtRel(r.d, base()):esc(r.press)}</span></li>`).join("") || `<li class="empty">${S.nvMode==="home" ? `${home} 랭킹이 이 시점 데이터에 없습니다.` : "없음"}</li>`;
   }
 
-  // ---------- 지역 ----------
+  // ---------- 지역 (실제 시·도 지도) ----------
+  let regionLeaveTimer = null, krBuilt = false;
+  function regionFill(items, code){
+    if(code==="KR-50") return "rgba(120,130,150,.18)";
+    if(!items.length) return "rgba(120,130,150,.12)";
+    const loc = items.filter(i => !i.nat && i.n<=3).length, f = Math.min(1, loc/5);
+    return loc ? `rgba(240,165,42,${(0.22+0.68*f).toFixed(2)})` : "rgba(10,122,255,.22)";
+  }
   function renderRegions(){
-    const v = S.view, names = v.region_names||S.manifest.region_names||{}, R = v.regions||{};
-    $("map").innerHTML = MAP.flat().map(code => {
-      if(!code) return `<div class="tile blank"></div>`;
-      const items = R[code]||[]; const loc = items.filter(i => !i.nat && i.n<=3).length; const top = items[0];
-      const lv = loc>=5?"l5":loc>=3?"l3":loc>0?"l1":"l0";
-      return `<div class="tile ${lv} ${S.region===code?"sel":""}" data-code="${code}"><div class="nm">${names[code]||code}</div><div class="top">${top?esc(top.k):"<span style='color:var(--dim)'>데이터 없음</span>"}</div><span class="loc">${loc}</span></div>`;
-    }).join("");
-    $("map").querySelectorAll(".tile[data-code]").forEach(t => t.onclick = () => { S.region = t.dataset.code; renderRegions(); });
-    const el = $("regionDetail");
-    if(!S.region) return;
-    const items = R[S.region]||[];
-    el.innerHTML = `<h2>${esc(names[S.region]||S.region)} 급상승 검색어 <span class="sub">구글 트렌드</span></h2>` +
-      (items.length ? `<ol class="plist">${items.map(i => `<li><span class="n">${i.r}</span><span class="k link" data-q="${esc(i.k)}">${esc(i.k)}</span><span class="m">${fmtTraffic(i.tr)}</span>${i.nat?`<span class="tag nat">전국</span>`:(i.n<=3?`<span class="tag loc">${i.n===1?"이 지역만":"지역 "+i.n+"곳"}</span>`:`<span class="tag">지역 ${i.n}곳</span>`)}</li>`).join("")}</ol>
-      <p class="chartnote" style="margin-top:8px">‘전국’은 전국 급상승 목록에도 있는 검색어, ‘이 지역만’·‘지역 n곳’은 전국 목록엔 없고 일부 시·도에서만 뜨는 검색어입니다. 지역 뉴스 발굴 후보로 보세요.</p>`
-      : `<div class="empty">이 시점에 저장된 지역 데이터가 없습니다.</div>`);
-    el.querySelectorAll(".k.link").forEach(x => x.onclick = () => jumpTo(x.dataset.q));
+    const v = S.view, names = v.region_names||S.manifest.region_names||{}, R = v.regions||{}, M = window.KR_MAP;
+    const host = $("krmap");
+    if(!M){ host.innerHTML = `<div class="empty">지도 데이터(kr-map.js)를 불러오지 못했습니다.</div>`; return; }
+    if(!krBuilt){
+      host.innerHTML = `<svg class="kr" id="krSvg" viewBox="0 0 ${M.W} ${M.H}"><g id="krPaths">${Object.entries(M.regions).map(([code, r]) => `<path data-code="${code}" d="${r.d}"/>`).join("")}</g>
+        <g id="krLabels">${Object.entries(M.regions).map(([code, r]) => `<text x="${r.cx}" y="${r.cy}" text-anchor="middle" class="${["KR-11","KR-26","KR-27","KR-28","KR-29","KR-30","KR-31","KR-50"].includes(code)?"sm":""}">${r.n}</text>`).join("")}</g></svg>`;
+      krBuilt = true;
+      const svg = $("krSvg");
+      svg.querySelectorAll("path").forEach(el => {
+        const code = el.dataset.code;
+        el.onmouseenter = () => { clearTimeout(regionLeaveTimer); popRegion(code); renderRegionSide(code); };
+        el.onmouseleave = () => { if(S.region===code) return; regionLeaveTimer = setTimeout(() => { popRegion(S.region); renderRegionSide(S.region); }, 220); };
+        el.onclick = ev => { ev.stopPropagation(); S.region = (S.region===code) ? null : code; popRegion(S.region||code); renderRegionSide(S.region||code); svg.querySelectorAll("path").forEach(p2 => p2.classList.toggle("pinned", p2.dataset.code===S.region)); syncHash(); };
+      });
+      svg.onclick = () => { S.region = null; popRegion(null); renderRegionSide(null); svg.querySelectorAll("path").forEach(p2 => p2.classList.remove("pinned")); syncHash(); };
+      svg.onmouseleave = () => { regionLeaveTimer = setTimeout(() => { popRegion(S.region); renderRegionSide(S.region); }, 220); };
+    }
+    $("krSvg").querySelectorAll("path").forEach(el => { const code = el.dataset.code; el.style.fill = regionFill(R[code]||[], code); el.classList.toggle("pinned", code===S.region); });
+    if(S.region && !M.regions[S.region]) S.region = null;
+    popRegion(S.region); renderRegionSide(S.region);
+  }
+  function popRegion(code){
+    const g = $("krPaths"); if(!g) return;
+    g.querySelectorAll("path").forEach(el => el.classList.remove("pop"));
+    if(!code) return;
+    const el = g.querySelector(`path[data-code="${code}"]`); if(!el) return;
+    el.classList.add("pop"); g.appendChild(el);   // 맨 위로 올려 튀어나온 느낌
+  }
+  function renderRegionSide(code){
+    const v = S.view, names = v.region_names||S.manifest.region_names||{}, R = v.regions||{}, el = $("regionDetail");
+    if(!code){
+      const rows = Object.entries(R).map(([c, items]) => ({c, name:names[c]||c, loc:items.filter(i => !i.nat && i.n<=3).length, top:items[0]})).sort((a,b) => b.loc - a.loc || (a.name>b.name?1:-1)).slice(0,6);
+      el.innerHTML = `<div class="rtitle"><h2>지역별 급상승 검색어</h2><span class="rnum">권역에 마우스를 올리면 순위가 펼쳐집니다</span></div>
+        <p class="narr" style="color:var(--muted)">지금 그 지역에서만 뜨는 검색어가 많은 곳입니다. 지역 뉴스 발굴 후보로 보세요.</p>
+        <ol class="plist unfold">${rows.map((r,i) => `<li style="animation-delay:${i*40}ms"><span class="n"></span><span class="k link" data-region="${r.c}"><b>${esc(r.name)}</b> <span style="color:var(--muted)">· 1위 ${esc(r.top?r.top.k:"-")}</span></span><span class="m">이 지역만 ${r.loc}개</span></li>`).join("")}</ol>`;
+      el.querySelectorAll("[data-region]").forEach(x => x.onclick = () => { S.region = x.dataset.region; renderRegions(); syncHash(); });
+      return;
+    }
+    const items = R[code]||[], loc = items.filter(i => !i.nat && i.n<=3).length;
+    el.innerHTML = `<div class="rtitle"><h2>${esc(names[code]||code)}</h2><span class="rnum">급상승 검색어 ${items.length}개 · 이 지역만 ${loc}개${S.region===code?" · 고정됨":""}</span></div>` +
+      (items.length ? `<ol class="plist unfold">${items.map((i,idx) => `<li style="animation-delay:${idx*35}ms"><span class="n">${i.r}</span><span class="k link" data-q="${esc(i.k)}">${esc(i.k)}</span><span class="m">${fmtTraffic(i.tr)}</span>${i.nat?`<span class="tag nat">전국</span>`:(i.n<=3?`<span class="tag loc">${i.n===1?"이 지역만":"지역 "+i.n+"곳"}</span>`:`<span class="tag">지역 ${i.n}곳</span>`)}</li>`).join("")}</ol>
+      <p class="chartnote" style="margin-top:8px">‘전국’은 전국 급상승 목록에도 있는 검색어, ‘이 지역만’·‘지역 n곳’은 전국 목록엔 없고 일부 시·도에서만 뜨는 검색어입니다. 검색어를 누르면 관련 키워드·스토리로 이동합니다.</p>`
+      : `<div class="empty">${code==="KR-50" ? "세종은 구글 트렌드가 지역 데이터를 제공하지 않습니다." : "이 시점에 저장된 지역 데이터가 없습니다."}</div>`);
+    el.querySelectorAll(".k.link[data-q]").forEach(x => x.onclick = () => jumpTo(x.dataset.q));
   }
 
   // ---------- 주소 해시 ----------
@@ -835,12 +875,16 @@
     if(h.get("kw")) S.kw = h.get("kw");
     if(h.get("story")) S.story = h.get("story");
     if(h.get("pin")) S.pin = h.get("pin");
+    if(h.get("region")) S.region = h.get("region");
+    if(h.has("noanim")) document.documentElement.classList.add("noanim");
   }
   function syncHash(){
     const p = new URLSearchParams(); p.set("mode", S.mode); p.set("cat", S.cat);
     if(S.mode==="keyword" && S.kw) p.set("kw", S.kw);
     if(S.mode==="story" && S.story) p.set("story", S.story);
     if(S.mode==="map" && S.pin) p.set("pin", S.pin);
+    if(S.region) p.set("region", S.region);
+    if(location.hash.includes("noanim")) p.set("noanim", "1");
     history.replaceState(null, "", "#" + p.toString());
   }
   const _renderMain = renderMain;
