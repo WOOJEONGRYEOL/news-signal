@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 30분마다 scripts/run_auto.sh 실행 (로그인 상태에서만). 맥이 잠자던 동안 건너뛴 회차는 깨어날 때 한 번 돕니다.
+     설치: bash scripts/install_launchagent.sh
+     제거: launchctl bootout gui/$(id -u)/com.woo.newssignal && rm ~/Library/LaunchAgents/com.woo.newssignal.plist -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.woo.newssignal</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/woo/News Signal/scripts/run_auto.sh</string>
+  </array>
+  <key>StartInterval</key><integer>1800</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>/Users/woo/News Signal/logs/launchd.log</string>
+  <key>StandardErrorPath</key><string>/Users/woo/News Signal/logs/launchd.err</string>
+</dict>
+</plist>

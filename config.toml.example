@@ -1,0 +1,14 @@
+# config.toml 로 복사해서 쓰세요. 없으면 아래 기본값이 적용됩니다.
+home_press = "채널A"          # '네이버 많이 본 기사' 칸에서 따로 보여줄 우리 회사 이름 (네이버 표기 그대로)
+interval_minutes = 30         # loop / LaunchAgent 수집 간격
+news_search_limit = 25        # 수집 1회당 구글 뉴스 검색으로 기사 보강할 최대 키워드 수
+top_n = 10                    # 화면에 보여줄 순위
+keep_n = 20                   # 이력 파일에 남길 순위(시계열·과거 조회용)
+baseline_days = 7             # 급상승 기준: 지난 N일 평균
+# region_codes = ["KR-11", "KR-41"]   # 비우면 16개 시·도 전부
+
+[weights]                     # 합이 1이 아니어도 자동으로 비율을 맞춥니다
+search = 0.35
+publish = 0.30
+consume = 0.15
+spike = 0.20

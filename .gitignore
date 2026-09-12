@@ -1,0 +1,7 @@
+data/newssignal.sqlite3
+data/*.sqlite3-journal
+logs/
+config.toml
+__pycache__/
+*.pyc
+.claude/
