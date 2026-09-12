@@ -187,6 +187,45 @@
   .foot{color:var(--dim);font-size:12px;margin-top:10px}
   .err{background:rgba(224,86,76,.12);border:1px solid rgba(224,86,76,.35);color:var(--text);padding:10px 14px;border-radius:14px;margin:12px 0}
   .hidden{display:none!important}
+  .touchhint{display:none}
+  @media (hover:none){ .hoverhint{display:none} .touchhint{display:inline} }
+  /* ---- 모바일 ---- */
+  @media (max-width:700px){
+    html,body{-webkit-text-size-adjust:100%}
+    .wrap{padding:10px 10px 32px}
+    header{gap:8px 14px;padding:6px 2px 10px}
+    .brand h1{font-size:20px}
+    .status{font-size:12px;width:100%}
+    .timectl{margin-left:0;width:100%;gap:6px}
+    .timectl select{flex:1;min-width:0;padding:6px 8px}
+    .timectl .pill{padding:6px 12px}
+    .controls{padding:0 2px 10px}
+    .seg.primary{display:flex;width:100%}
+    .seg.primary button{flex:1;padding:9px 6px;font-size:14px}
+    .subrow{margin:8px 0 0 6px;padding-left:10px;gap:6px}
+    nav.tabs{gap:3px}
+    nav.tabs button{padding:4px 9px;font-size:12px}
+    .grid{gap:10px}
+    .panel{padding:14px 14px;border-radius:18px}
+    table.rank th.colbar,table.rank td.colbar{display:none}
+    table.rank td{padding:8px 4px}
+    .num{width:20px}
+    .hl{font-size:13.5px}
+    .kw{font-size:14px}
+    .score{width:44px;font-size:13px}
+    .detail h2{font-size:16.5px}
+    .detail h2 .pt{font-size:15px}
+    ul.news li{grid-template-columns:52px 1fr;gap:8px}
+    ul.news .t{font-size:11px}
+    .ring{height:auto;aspect-ratio:420/300}
+    .netgrid{gap:10px}
+    .net{height:auto;aspect-ratio:720/900}
+    .nethelp{font-size:11.5px;gap:8px}
+    .portals{gap:10px;margin-top:10px}
+    .regions{gap:10px;margin-top:10px}
+    .kr{max-height:none}
+    .legend{font-size:12.5px}
+  }
 </style>
 </head>
 <body>
@@ -226,7 +265,7 @@
     <section class="glass panel">
       <h2>키워드 관계망 <span class="sub" id="mapSub"></span></h2>
       <div id="net"></div>
-      <div class="nethelp"><span>점수가 높을수록 크고 가운데에 · 색은 카테고리, 같은 분야는 같은 방향</span><span>글자에 마우스를 올리면 그 말이 가운데로 오고 함께 다뤄진 말들이 읽기 좋은 크기로 둘레에 펼쳐지며, 오른쪽에 관련 기사가 뜹니다. 다른 키워드에 올리면 그쪽으로 옮겨 가고, 커서가 이 영역을 벗어나면 제자리로 돌아갑니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
+      <div class="nethelp"><span>점수가 높을수록 크고 가운데에 · 색은 카테고리, 같은 분야는 같은 방향</span><span class="hoverhint">글자에 마우스를 올리면 그 말이 가운데로 오고 함께 다뤄진 말들이 읽기 좋은 크기로 둘레에 펼쳐지며, 오른쪽에 관련 기사가 뜹니다. 다른 키워드에 올리면 그쪽으로 옮겨 가고, 커서가 이 영역을 벗어나면 제자리로 돌아갑니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span><span class="touchhint">글자를 누르면 그 말이 가운데로 오고 함께 다뤄진 말들이 둘레에 펼쳐지며, 아래에 관련 기사가 뜹니다. 다른 글자를 누르면 그쪽으로 옮겨 가고, 빈 곳을 누르면 제자리로 돌아갑니다 · 두 손가락으로 확대·이동</span></div>
     </section>
     <section class="glass panel side" id="netSide"></section>
   </div>
@@ -241,7 +280,7 @@
   </div>
 
   <div class="regions">
-    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · 권역에 마우스를 올려 보세요</span></h2><div id="krmap"></div>
+    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역에 마우스를 올려 보세요</span><span class="touchhint">권역을 눌러 보세요</span></span></h2><div id="krmap"></div>
       <div class="nethelp"><span><i style="background:rgba(240,165,42,.85)"></i>진할수록 그 지역에서만 뜨는 검색어가 많음</span><span><i style="background:rgba(10,122,255,.25)"></i>전국 목록과 같은 지역</span><span><i style="background:rgba(120,130,150,.25)"></i>세종은 구글 트렌드 미지원</span></div></section>
     <section class="glass panel" id="regionDetail"></section>
   </div>
@@ -275,6 +314,7 @@
     ["KR-49",  null ,  null ,  null ],
   ];
   const $ = id => document.getElementById(id);
+  const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
   const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, path:[], filterKw:null,
               range:"24h", viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
@@ -386,7 +426,7 @@
     if(map){ renderNetwork(); return; }
     if(S.mode==="story"){
       $("listTitle").innerHTML = `스토리 Top ${S.manifest.top_n||10} <span class="sub" id="rankSub"></span>`;
-      $("rankHead").innerHTML = `<tr><th class="num">#</th><th>대표 기사 · 공통 키워드</th><th>변동</th><th>신호</th><th style="text-align:right">점수</th></tr>`;
+      $("rankHead").innerHTML = `<tr><th class="num">#</th><th>대표 기사 · 공통 키워드</th><th>변동</th><th class="colbar">신호</th><th style="text-align:right">점수</th></tr>`;
       renderStoryList();
       const rows = S.view.stories[S.cat]||[];
       if(S.story && !rows.some(o => o.id===S.story)) S.story = null;
@@ -394,7 +434,7 @@
       renderStoryDetail();
     } else {
       $("listTitle").innerHTML = `키워드 Top ${S.manifest.top_n||10} <span class="sub" id="rankSub"></span>`;
-      $("rankHead").innerHTML = `<tr><th class="num">#</th><th>키워드</th><th>변동</th><th>신호 구성</th><th style="text-align:right">점수</th><th>검색</th></tr>`;
+      $("rankHead").innerHTML = `<tr><th class="num">#</th><th>키워드</th><th>변동</th><th class="colbar">신호 구성</th><th style="text-align:right">점수</th><th>검색</th></tr>`;
       renderRank();
       const rows = S.view.categories[S.cat]||[];
       if(S.kw && !rows.some(o => o.k===S.kw)) S.kw = null;
@@ -426,7 +466,7 @@
     if(!rows.length){ $("rankBody").innerHTML = `<tr><td colspan="5" class="empty">이 시점에는 스토리가 없습니다.</td></tr>`; return; }
     $("rankBody").innerHTML = rows.map(o => `<tr class="row ${o.id===S.story?"sel":""}" data-id="${esc(o.id)}"><td class="num">${o.r}</td>
       <td><div class="hl">${esc(o.title)}</div><div class="meta"><span class="lb">${esc(o.ld)}</span><span>· 기사 ${o.n}건 · 언론사 ${o.outlets}곳</span>${o.src?srcHtml(o.src):""}</div></td>
-      <td>${deltaHtml(o.d)}</td><td>${barHtml(storySegs(o), `소비 ${o.outlets}곳 · 발행 ${o.n}건 · 검색 ${o.search} · 급상승 ${o.spike}`)}</td><td class="score">${o.s.toFixed(1)}</td></tr>`).join("");
+      <td>${deltaHtml(o.d)}</td><td class="colbar">${barHtml(storySegs(o), `소비 ${o.outlets}곳 · 발행 ${o.n}건 · 검색 ${o.search} · 급상승 ${o.spike}`)}</td><td class="score">${o.s.toFixed(1)}</td></tr>`).join("");
     $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; renderStoryList(); renderStoryDetail(); });
   }
   function storyNarrative(o){
@@ -481,7 +521,7 @@
     const sub = $("rankSub"); if(sub) sub.textContent = `${S.cat} · ${fmtTs(v.ts)} 기준`;
     if(!rows.length){ $("rankBody").innerHTML = `<tr><td colspan="6" class="empty">이 시점에는 순위가 없습니다.</td></tr>`; return; }
     $("rankBody").innerHTML = rows.map(o => { const g = segs(o, rows, W);
-      return `<tr class="row ${o.k===S.kw?"sel":""}" data-k="${esc(o.k)}"><td class="num">${o.r}</td><td class="kw">${esc(o.kd||o.k)}</td><td>${deltaHtml(o.d)}</td><td>${barHtml(g, `검색 ${o.sig.search} · 발행 ${o.sig.publish}건 · 소비 ${o.sig.consume}건 · 급상승 ×${o.sig.spike||0}`)}</td><td class="score">${o.s.toFixed(1)}</td><td>${srcHtml(o.src)}</td></tr>`; }).join("");
+      return `<tr class="row ${o.k===S.kw?"sel":""}" data-k="${esc(o.k)}"><td class="num">${o.r}</td><td class="kw">${esc(o.kd||o.k)}</td><td>${deltaHtml(o.d)}</td><td class="colbar">${barHtml(g, `검색 ${o.sig.search} · 발행 ${o.sig.publish}건 · 소비 ${o.sig.consume}건 · 급상승 ×${o.sig.spike||0}`)}</td><td class="score">${o.s.toFixed(1)}</td><td>${srcHtml(o.src)}</td></tr>`; }).join("");
     $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.kw = tr.dataset.k; S.path=[]; renderRank(); renderDetail(); });
   }
   function narrative(o){
@@ -535,10 +575,10 @@
     try { drawChart(await series(o.k, S.cat, "keyword"), "키워드"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
   }
   function drawRing(centerLabel, rel){
-    const W=640, H=250, cx=W/2, cy=H/2, R=Math.min(W,H)/2 - 40;
+    const narrow = isNarrow(), W = narrow ? 420 : 640, H = narrow ? 300 : 250, cx=W/2, cy=H/2, R=Math.min(W,H)/2 - (narrow ? 34 : 40);
     const max = Math.max(...rel.map(r => r[2]), 1);
     const items = rel.slice(0,10).map((r,i) => { const a = -Math.PI/2 + i*(2*Math.PI/Math.min(rel.length,10)); const rr = R*(0.85+0.15*(i%2));
-      return {k:r[0], d:r[1], c:r[2], x:cx+Math.cos(a)*rr*1.9, y:cy+Math.sin(a)*rr, fs: 12 + 12*(r[2]/max)}; });
+      return {k:r[0], d:r[1], c:r[2], x:cx+Math.cos(a)*rr*(narrow ? 1.35 : 1.9), y:cy+Math.sin(a)*rr, fs: (narrow ? 13 : 12) + 12*(r[2]/max)}; });
     const inRank = k => !!findKeyword(k);
     $("ring").innerHTML = `<svg class="ring" viewBox="0 0 ${W} ${H}">
       ${items.map(it => `<line x1="${cx}" y1="${cy}" x2="${it.x.toFixed(1)}" y2="${it.y.toFixed(1)}" stroke-width="${(0.5+2*it.c/max).toFixed(1)}"/>`).join("")}
@@ -562,12 +602,12 @@
       for(const cat of CATS.filter(c => c!=="전체")) for(const o of (v.categories[cat]||[]).slice(0,5)) if(!prims.some(p => p.k===o.k)) prims.push({...o, cat});
       for(const o of (v.categories["전체"]||[]).slice(0,12)) if(!prims.some(p => p.k===o.k)) prims.push({...o, cat:"전체"});
     } else for(const o of (v.categories[S.cat]||[]).slice(0,20)) prims.push({...o, cat:S.cat});
-    const W=1200, H=640, smax = Math.max(1, ...prims.map(p => p.s));
+    const narrow = isNarrow(), W = narrow ? 720 : 1200, H = narrow ? 900 : 640, smax = Math.max(1, ...prims.map(p => p.s));
     const N = prims.map(p => ({k:p.k, text:p.kd||p.k, s:p.s, cat:p.cat, type:"p"}));
     const idx = new Map(N.map((n,i)=>[n.k,i]));
     // 글자가 차지하는 면적이 점수에 비례하도록. 점수는 클라우드 안에서 최소~최대로 정규화하고(점수 차가 작아도 크기 차가 보이게),
     // 면적 = 최소 + (최대-최소)×r^1.2, 글자 크기 = sqrt(면적 / 글자당 면적). 전체 면적이 화면의 42%를 넘으면 모두 같은 비율로 줄인다.
-    const smin = Math.min(...N.map(n => n.s)), AMIN = 700, AMAX = 12000;
+    const smin = Math.min(...N.map(n => n.s)), AMIN = narrow ? 500 : 700, AMAX = narrow ? 9000 : 12000;
     const sizeOf = n => { const unit = Math.max(1, textW(n.text, 1)) * 1.3; const r = smax > smin ? (n.s - smin)/(smax - smin) : 1; return Math.sqrt((AMIN + (AMAX-AMIN)*Math.pow(r, 1.2))/unit); };
     for(const n of N) n.fs = sizeOf(n);
     const padded = () => N.reduce((a,n) => a + (textW(n.text, n.fs)+10+18)*(n.fs*1.3+10), 0);
@@ -657,11 +697,11 @@
       const {list, cmax} = relatedOf(key);
       // 이전 고스트 정리
       for(const gh of ghosts) gh.el.remove(); ghosts = []; for(const l of links) l.el.remove(); links = [];
-      const items = [{obj:n.cur, to:{x:cx, y:cy, fs:Math.max(50, n.fs*1.3), op:1}}];
+      const items = [{obj:n.cur, to:{x:cx, y:cy, fs:Math.max(isNarrow() ? 40 : 50, n.fs*1.3), op:1}}];
       const related = [];
       list.forEach(([st, disp, c], i) => {
         const M = list.length, a = -Math.PI/2 + i*(2*Math.PI/M), inner = i%2===0;
-        const rx = inner ? 280 : 400, ry = inner ? 150 : 215;
+        const rx = inner ? g.W*0.235 : g.W*0.335, ry = inner ? g.H*0.235 : g.H*0.335;
         const to = {x: cx + Math.cos(a)*rx, y: cy + Math.sin(a)*ry, fs: 18 + 16*(c/cmax), op:1};
         const inCloud = g.N.find(x => x.k===st);
         if(inCloud){ items.push({obj:inCloud.cur, to}); related.push({node:inCloud, dashed:false, k:st}); }
@@ -853,7 +893,7 @@
       const svg = $("krSvg");
       svg.querySelectorAll("path").forEach(el => {
         const code = el.dataset.code;
-        el.onmouseenter = () => { clearTimeout(regionLeaveTimer); regionHover = code; stopCycle(); popRegion(code); renderRegionSide(code); };
+        el.onmouseenter = () => { if(window.matchMedia("(hover:none)").matches) return; clearTimeout(regionLeaveTimer); regionHover = code; stopCycle(); popRegion(code); renderRegionSide(code); };
         el.onmouseleave = () => { regionHover = null; if(S.region===code) return; };
         el.onclick = ev => { ev.stopPropagation(); S.region = (S.region===code) ? null : code; svg.querySelectorAll("path").forEach(p2 => p2.classList.toggle("pinned", p2.dataset.code===S.region)); if(S.region){ stopCycle(); popRegion(code); renderRegionSide(code); } else { regionHover = null; startCycle(); } syncHash(); };
       });
@@ -877,7 +917,7 @@
     const v = S.view, names = v.region_names||S.manifest.region_names||{}, R = v.regions||{}, el = $("regionDetail");
     if(!code){
       const rows = Object.entries(R).map(([c, items]) => ({c, name:names[c]||c, loc:items.filter(i => !i.nat && i.n<=3).length, top:items[0]})).sort((a,b) => b.loc - a.loc || (a.name>b.name?1:-1)).slice(0,6);
-      el.innerHTML = `<div class="rtitle"><h2>지역별 급상승 검색어</h2><span class="rnum">권역에 마우스를 올리면 순위가 펼쳐집니다</span></div>
+      el.innerHTML = `<div class="rtitle"><h2>지역별 급상승 검색어</h2><span class="rnum"><span class="hoverhint">권역에 마우스를 올리면 순위가 펼쳐집니다</span><span class="touchhint">권역을 누르면 순위가 펼쳐집니다</span></span></div>
         <p class="narr" style="color:var(--muted)">지금 그 지역에서만 뜨는 검색어가 많은 곳입니다. 지역 뉴스 발굴 후보로 보세요.</p>
         <ol class="plist unfold">${rows.map((r,i) => `<li style="animation-delay:${i*40}ms"><span class="n"></span><span class="k link" data-region="${r.c}"><b>${esc(r.name)}</b> <span style="color:var(--muted)">· 1위 ${esc(r.top?r.top.k:"-")}</span></span><span class="m">이 지역만 ${r.loc}개</span></li>`).join("")}</ol>`;
       el.querySelectorAll("[data-region]").forEach(x => x.onclick = () => { S.region = x.dataset.region; renderRegions(); syncHash(); });
@@ -921,6 +961,8 @@
   }, 60000);
 
   window.addEventListener("error", e => { const d = $("err"); if(d) d.innerHTML += `<div class="err">스크립트 오류: ${esc(e.message)} (${esc((e.filename||"").split("/").pop())}:${e.lineno})</div>`; });
+  let resizeTimer = null, wasNarrow = isNarrow();
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if(isNarrow()!==wasNarrow){ wasNarrow = isNarrow(); S.graph = null; if(S.mode==="map") renderMain(); else if(S.mode==="keyword") renderDetail(); } }, 200); });
   applyHash();
   loadLive().catch(showErr);
 })();
