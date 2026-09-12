@@ -613,10 +613,28 @@
     el.querySelectorAll(".k.link").forEach(x => x.onclick = () => jumpTo(x.dataset.q));
   }
 
+  // ---------- 주소창 해시로 화면 상태 공유 (#mode=keyword&cat=정치&kw=김승원) ----------
+  function applyHash(){
+    const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+    if(["story","keyword","map"].includes(h.get("mode"))) S.mode = h.get("mode");
+    if(CATS.includes(h.get("cat"))) S.cat = h.get("cat");
+    if(h.get("kw")) S.kw = h.get("kw");
+    if(h.get("story")) S.story = h.get("story");
+  }
+  function syncHash(){
+    const p = new URLSearchParams(); p.set("mode", S.mode); p.set("cat", S.cat);
+    if(S.mode==="keyword" && S.kw) p.set("kw", S.kw);
+    if(S.mode==="story" && S.story) p.set("story", S.story);
+    history.replaceState(null, "", "#" + p.toString());
+  }
+  const _renderMain = renderMain;
+  renderMain = function(){ _renderMain(); syncHash(); };
+
   setInterval(async () => {
     try { const m = await getJSON("data/manifest.json"); if(m.latest !== (S.manifest||{}).latest){ if(S.view && S.view.isLive) await loadLive(); else { S.manifest = m; fillTimeSelects(); } } } catch(e){}
   }, 60000);
 
+  applyHash();
   loadLive().catch(showErr);
 })();
 </script>

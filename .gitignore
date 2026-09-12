@@ -5,3 +5,4 @@ config.toml
 __pycache__/
 *.pyc
 .claude/
+scripts/webshot
