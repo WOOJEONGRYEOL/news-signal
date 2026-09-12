@@ -138,6 +138,11 @@
   .net .word.on rect{fill:var(--accent-soft)}
   .net .word.center rect{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);stroke-width:1.5}
   .net .word.pin rect{stroke:var(--text);stroke-width:1.5}
+  .net .ghost{cursor:pointer}
+  .net .ghost line{stroke:var(--accent);stroke-opacity:.45;stroke-dasharray:3 3}
+  .net .ghost rect{fill:var(--glass-hi);stroke:var(--accent);stroke-opacity:.5;stroke-width:1}
+  .net .ghost text{fill:var(--accent);font-weight:600;pointer-events:none}
+  .net .ghost:hover rect{fill:var(--accent-soft)}
   .nethelp{color:var(--dim);font-size:12px;margin-top:8px;display:flex;gap:14px;flex-wrap:wrap}
   .nethelp i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-block:-1px;vertical-align:-1px}
   .side h2{font-size:18px;letter-spacing:-.02em}
@@ -211,7 +216,7 @@
     <section class="glass panel">
       <h2>키워드 관계망 <span class="sub" id="mapSub"></span></h2>
       <div id="net"></div>
-      <div class="nethelp"><span>큰 글자 = 순위 키워드(크기는 점수, 색은 카테고리) · 작은 회색 글자 = 함께 등장한 연관어 · 가까이 놓인 말일수록 같이 다뤄진 말입니다</span><span>글자에 마우스를 올리면 관계망의 단어들이 밝아지고 연결선이 나타나며, 오른쪽에 관련 기사가 뜹니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
+      <div class="nethelp"><span>글자 크기는 점수, 색은 카테고리 · 가까이 놓인 말일수록 같이 다뤄진 말입니다</span><span>글자에 마우스를 올리면 함께 다뤄진 말들이 주변에 나타나고(클라우드에 없던 말도 포함) 관계된 키워드가 밝아지며, 오른쪽에 관련 기사가 뜹니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
     </section>
     <section class="glass panel side" id="netSide"></section>
   </div>
@@ -237,7 +242,7 @@
       <i class="sw" style="background:var(--publish)"></i><b>발행</b> 묶인 기사 수(<span id="sP"></span>)
       <i class="sw" style="background:var(--search)"></i><b>검색</b> 구글 트렌드·네이트·줌 실시간 검색어와 맞물리는지(<span id="sS"></span>)
       <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 처음 등장 후 3시간 안이거나 직전보다 기사가 늘었는지(<span id="sK"></span>)를 더한 값입니다.</p>
-    <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 순위 키워드와 연관어를 워드클라우드처럼 펼쳐 둔 화면으로, 평소에는 선이 없다가 글자에 마우스를 올리면 그 말과 함께 다뤄진 단어들이 밝아지고 연결선이 나타나며 관련 기사가 뜹니다.</p>
+    <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 주요 키워드만 워드클라우드처럼 펼쳐 둔 화면입니다. 글자에 마우스를 올리면 그 말과 함께 다뤄진 연관어들이 주변에 나타나고(클라우드에 없던 말도 포함), 관계된 키워드가 밝아지며 관련 기사가 뜹니다.</p>
     <p><b>변동</b>은 직전 수집 대비 순위 이동, G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다. 가중치는 <code>config.toml</code>에서 바꿀 수 있습니다.</p>
     <p>수집은 30분마다 한 번입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
     <p class="foot" id="foot"></p>
@@ -535,93 +540,113 @@
   }
 
   // ---------- 관계망 ----------
+  const textW = (t, fs) => { let w = 0; for(const ch of t){ w += /[ᄀ-ᇿ㄰-㆏가-힯一-鿿぀-ヿ]/.test(ch) ? 0.98 : /[A-Z0-9]/.test(ch) ? 0.68 : /[a-z]/.test(ch) ? 0.58 : ch===" " ? 0.32 : 0.5; } return w*fs; };
+  const collides = (a,b,px=18,py=10) => Math.abs(a.x-b.x) < (a.w+b.w)/2 + px && Math.abs(a.y-b.y) < (a.h+b.h)/2 + py;
   function buildGraph(){
+    // 클라우드에는 주요 키워드만. 연관어는 호버할 때 주변에 나타난다.
     const v = S.view, rel = v.related||{};
-    const nodes = new Map(), edges = new Map();
-    const addEdge = (a,b,w) => { if(a===b) return; const key = a<b ? a+"|"+b : b+"|"+a; edges.set(key, Math.max(edges.get(key)||0, w)); };
     const prims = [];
     if(S.cat==="전체"){
-      for(const cat of CATS.filter(c => c!=="전체")) for(const o of (v.categories[cat]||[]).slice(0,8)) prims.push({...o, cat});
-      for(const o of (v.categories["전체"]||[]).slice(0,20)) if(!prims.some(p => p.k===o.k)) prims.push({...o, cat:"전체"});
+      for(const cat of CATS.filter(c => c!=="전체")) for(const o of (v.categories[cat]||[]).slice(0,5)) if(!prims.some(p => p.k===o.k)) prims.push({...o, cat});
+      for(const o of (v.categories["전체"]||[]).slice(0,12)) if(!prims.some(p => p.k===o.k)) prims.push({...o, cat:"전체"});
     } else for(const o of (v.categories[S.cat]||[]).slice(0,20)) prims.push({...o, cat:S.cat});
-    for(const p of prims) if(!nodes.has(p.k)) nodes.set(p.k, {k:p.k, text:p.kd||p.k, s:p.s, cat:p.cat, type:"p"});
-    const sec = new Map();
-    for(const p of prims){
-      (rel[p.k]||[]).slice(0,6).forEach(([st, disp, c], i) => {
-        if(nodes.has(st)){ addEdge(p.k, st, c); return; }
-        const e = sec.get(st) || {k:st, text:disp, links:[], top:false}; e.links.push([p.k, c]); if(i<3) e.top = true; sec.set(st, e);
-      });
-    }
-    const secs = [...sec.values()].filter(e => e.links.length>=2 || e.top).sort((a,b) => b.links.length - a.links.length || b.links[0][1]-a.links[0][1]);
-    const cap = Math.max(0, 170 - nodes.size);
-    for(const e of secs.slice(0, cap)){ nodes.set(e.k, {k:e.k, text:e.text, s:0, cat:"", type:"s", deg:e.links.length}); for(const [pk,c] of e.links) addEdge(pk, e.k, c); }
-    const W=1200, H=640, N=[...nodes.values()], idx = new Map(N.map((n,i)=>[n.k,i]));
-    const smax = Math.max(1, ...prims.map(p => p.s));
-    // 글자 크기와 상자 크기 (워드클라우드처럼 점수가 클수록 크게)
-    // 글자 폭 추정 (캔버스 measureText는 시스템 글꼴 목록을 못 읽어 폭을 작게 잡는다)
-    const textW = (t, fs) => { let w = 0; for(const ch of t){ w += /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af\u4e00-\u9fff\u3040-\u30ff]/.test(ch) ? 0.98 : /[A-Z0-9]/.test(ch) ? 0.68 : /[a-z]/.test(ch) ? 0.58 : ch===" " ? 0.32 : 0.5; } return w*fs; };
-    for(const n of N){ n.fs = n.type==="p" ? 14 + 28*Math.sqrt(n.s/smax) : 11.5; n.w = textW(n.text, n.fs) + 14; n.h = n.fs*1.32; }
-    // 1) 힘 배치: 연관된 말끼리 가깝게
-    const catOrder = CATS.filter(c => c!=="전체").concat(["전체"]);
-    N.forEach((n,i) => { if(n.type==="p"){ const a = (catOrder.indexOf(n.cat)+ (i%3)*0.15)/catOrder.length*2*Math.PI; n.x = W/2 + Math.cos(a)*240; n.y = H/2 + Math.sin(a)*170; } });
-    N.forEach(n => { if(n.type==="s"){ const e = sec.get(n.k); const p = nodes.get(e.links[0][0]); n.x = (p.x||W/2) + (Math.random()-0.5)*80; n.y = (p.y||H/2) + (Math.random()-0.5)*80; } });
-    const E = [...edges.entries()].map(([key,w]) => { const [a,b]=key.split("|"); return {a:idx.get(a), b:idx.get(b), w}; }).filter(e => e.a!=null && e.b!=null);
+    const W=1200, H=640, smax = Math.max(1, ...prims.map(p => p.s));
+    const N = prims.map(p => ({k:p.k, text:p.kd||p.k, s:p.s, cat:p.cat, type:"p"}));
+    const idx = new Map(N.map((n,i)=>[n.k,i]));
+    for(const n of N){ n.fs = 15 + 30*Math.sqrt(n.s/smax); n.w = textW(n.text, n.fs) + 10; n.h = n.fs*1.3; }
+    // 클라우드 안 키워드끼리의 연결 (연관어 목록에 서로 있으면)
+    const edges = new Map();
+    for(const n of N) for(const [st,,c] of (rel[n.k]||[])) if(idx.has(st) && st!==n.k){ const key = n.k<st ? n.k+"|"+st : st+"|"+n.k; edges.set(key, Math.max(edges.get(key)||0, c)); }
+    const E = [...edges.entries()].map(([key,w]) => { const [a,b]=key.split("|"); return {a:idx.get(a), b:idx.get(b), w}; });
     const wmax = Math.max(1, ...E.map(e => e.w));
-    const k = Math.sqrt(W*H/Math.max(1,N.length)) * 1.0;
-    let temp = 60;
-    for(let it=0; it<220; it++){
+    // 1) 힘 배치: 같은 카테고리·연관된 말끼리 가깝게
+    const catOrder = CATS.filter(c => c!=="전체").concat(["전체"]);
+    N.forEach((n,i) => { const a = (catOrder.indexOf(n.cat) + (i%4)*0.12)/catOrder.length*2*Math.PI; n.x = W/2 + Math.cos(a)*200 + (Math.random()-0.5)*60; n.y = H/2 + Math.sin(a)*130 + (Math.random()-0.5)*60; });
+    const k = Math.sqrt(W*H/Math.max(1,N.length)) * 0.9;
+    let temp = 50;
+    for(let it=0; it<200; it++){
       const dx = new Float64Array(N.length), dy = new Float64Array(N.length);
       for(let i=0;i<N.length;i++) for(let j=i+1;j<N.length;j++){
-        let ex = N[i].x-N[j].x, ey = N[i].y-N[j].y; let d = Math.hypot(ex,ey)||0.01; if(d>420) continue;
-        const f = (k*k)/d * (N[i].type==="p"&&N[j].type==="p" ? 2.2 : N[i].type==="s"&&N[j].type==="s" ? 0.6 : 1) / d; dx[i]+=ex*f; dy[i]+=ey*f; dx[j]-=ex*f; dy[j]-=ey*f;
+        let ex = N[i].x-N[j].x, ey = N[i].y-N[j].y; let d = Math.hypot(ex,ey)||0.01; if(d>500) continue;
+        const same = N[i].cat===N[j].cat ? 0.7 : 1.3; const f = (k*k)/d * same / d; dx[i]+=ex*f; dy[i]+=ey*f; dx[j]-=ex*f; dy[j]-=ey*f;
       }
-      for(const e of E){ let ex = N[e.a].x-N[e.b].x, ey = N[e.a].y-N[e.b].y; const d = Math.hypot(ex,ey)||0.01; const f = (d*d/k) * (0.4+0.9*e.w/wmax) / d; dx[e.a]-=ex*f; dy[e.a]-=ey*f; dx[e.b]+=ex*f; dy[e.b]+=ey*f; }
-      for(let i=0;i<N.length;i++){ const n=N[i]; const g = n.type==="p" ? 0.008 : 0.012; dx[i] += (W/2-n.x)*g; dy[i] += (H/2-n.y)*g*1.6; const d = Math.hypot(dx[i],dy[i])||0.01; const m = Math.min(d, temp); n.x += dx[i]/d*m; n.y += dy[i]/d*m; }
+      for(const e of E){ let ex = N[e.a].x-N[e.b].x, ey = N[e.a].y-N[e.b].y; const d = Math.hypot(ex,ey)||0.01; const f = (d*d/k) * (0.3+0.8*e.w/wmax) / d; dx[e.a]-=ex*f; dy[e.a]-=ey*f; dx[e.b]+=ex*f; dy[e.b]+=ey*f; }
+      for(let i=0;i<N.length;i++){ const n=N[i]; dx[i] += (W/2-n.x)*0.03; dy[i] += (H/2-n.y)*0.045; const d = Math.hypot(dx[i],dy[i])||0.01; const m = Math.min(d, temp); n.x += dx[i]/d*m; n.y += dy[i]/d*m; }
       temp = Math.max(1.5, temp*0.975);
     }
-    // 2) 워드클라우드 배치: 큰 말부터, 힘 배치가 정해 준 자리에서 나선을 그리며 빈 자리를 찾는다 (겹침 없음 보장)
-    const collides = (a,b) => Math.abs(a.x-b.x) < (a.w+b.w)/2 + 4 && Math.abs(a.y-b.y) < (a.h+b.h)/2 + 2;
-    const inside = n => n.x-n.w/2 >= 6 && n.x+n.w/2 <= W-6 && n.y-n.h/2 >= 6 && n.y+n.h/2 <= H-6;
-    const order2 = [...N].sort((a,b) => b.fs - a.fs || b.s - a.s);
+    // 2) 워드클라우드 배치: 큰 말부터 나선으로 빈자리 찾기 (여유 있게)
+    const inside = n => n.x-n.w/2 >= 10 && n.x+n.w/2 <= W-10 && n.y-n.h/2 >= 10 && n.y+n.h/2 <= H-10;
     const placed = [];
-    for(const n of order2){
-      const x0 = Math.max(n.w/2+6, Math.min(W-n.w/2-6, n.x)), y0 = Math.max(n.h/2+6, Math.min(H-n.h/2-6, n.y));
+    for(const n of [...N].sort((a,b) => b.fs - a.fs)){
+      const x0 = Math.max(n.w/2+10, Math.min(W-n.w/2-10, n.x)), y0 = Math.max(n.h/2+10, Math.min(H-n.h/2-10, n.y));
       let done = false;
-      for(let t=0; t<3000 && !done; t++){
-        const a = 0.3*t, r = 1.7*a;                    // 한 바퀴에 약 10px씩 넓어지는 나선, 최대 반경 ≈ 화면 폭
-        n.x = x0 + Math.cos(a)*r*1.4; n.y = y0 + Math.sin(a)*r*0.8;
-        if(!inside(n)) continue;
-        if(!placed.some(p => collides(n,p))){ done = true; }
-      }
+      for(let t=0; t<3000 && !done; t++){ const a = 0.3*t, r = 1.7*a; n.x = x0 + Math.cos(a)*r*1.4; n.y = y0 + Math.sin(a)*r*0.8; if(inside(n) && !placed.some(p => collides(n,p))) done = true; }
       if(!done){ n.x = x0; n.y = y0; }
       placed.push(n);
     }
+    // 3) 압축: 겹치지 않는 한에서 가운데로 당겨 빈 구멍을 메운다
+    for(let it=0; it<40; it++){
+      let moved = false;
+      for(const n of placed){
+        const ex = W/2-n.x, ey = H/2-n.y, d = Math.hypot(ex,ey); if(d<8) continue;
+        const ox=n.x, oy=n.y; n.x += ex/d*6; n.y += ey/d*6*0.8;
+        if(!inside(n) || placed.some(p => p!==n && collides(n,p))){ n.x=ox; n.y=oy; } else moved = true;
+      }
+      if(!moved) break;
+    }
     const nb = new Map(N.map(n => [n.k, new Set()]));
     for(const e of E){ nb.get(N[e.a].k).add(N[e.b].k); nb.get(N[e.b].k).add(N[e.a].k); }
-    return {W, H, N, E, nb, sec, wmax, smax};
+    return {W, H, N, E, nb, wmax, smax};
   }
   function renderNetwork(){
     if(!S.graph) S.graph = buildGraph();
-    const g = S.graph;
-    $("mapSub").textContent = `${S.cat} · 키워드 ${g.N.filter(n=>n.type==="p").length}개 · 연관어 ${g.N.filter(n=>n.type==="s").length}개 · 글자에 마우스를 올리면 관계가 나타납니다`;
+    const g = S.graph, v = S.view, rel = v.related||{};
+    $("mapSub").textContent = `${S.cat} · 주요 키워드 ${g.N.length}개 · 글자에 마우스를 올리면 관계된 말이 나타납니다`;
     $("net").innerHTML = `<svg class="net" id="netSvg" viewBox="0 0 ${g.W} ${g.H}">
       <g id="netEdges">${g.E.map((e,i) => `<line data-i="${i}" x1="${g.N[e.a].x.toFixed(1)}" y1="${g.N[e.a].y.toFixed(1)}" x2="${g.N[e.b].x.toFixed(1)}" y2="${g.N[e.b].y.toFixed(1)}" stroke-width="${(1+3*e.w/g.wmax).toFixed(1)}"/>`).join("")}</g>
-      <g id="netNodes">${g.N.map(n => `<g class="word ${n.type==="s"?"sec":""}" data-k="${esc(n.k)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><rect x="${(-n.w/2).toFixed(1)}" y="${(-n.h/2).toFixed(1)}" width="${n.w.toFixed(1)}" height="${n.h.toFixed(1)}" rx="8"/><text y="${(n.fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${n.fs.toFixed(1)}" style="${n.type==="p"?`fill:${CAT_COLOR[n.cat]||"#999"}`:""}">${esc(n.text)}</text></g>`).join("")}</g>
+      <g id="netGhost"></g>
+      <g id="netNodes">${g.N.map(n => `<g class="word" data-k="${esc(n.k)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><rect x="${(-n.w/2-4).toFixed(1)}" y="${(-n.h/2).toFixed(1)}" width="${(n.w+8).toFixed(1)}" height="${n.h.toFixed(1)}" rx="10"/><text y="${(n.fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${n.fs.toFixed(1)}" style="fill:${CAT_COLOR[n.cat]||"#999"}">${esc(n.text)}</text></g>`).join("")}</g>
     </svg>`;
     const svg = $("netSvg");
     const nodeEls = new Map([...svg.querySelectorAll(".word")].map(el => [el.dataset.k, el]));
     const edgeEls = [...svg.querySelectorAll("#netEdges line")];
+    let clearTimer = null, hoverTimer = null;
+    function showGhosts(key){
+      // 클라우드에 없는 연관어를 호버한 말 주변 빈자리에 띄운다
+      const n = g.N.find(x => x.k===key); if(!n) return;
+      const list = (rel[key]||[]).filter(([st]) => !nodeEls.has(st)).slice(0, 8);
+      const cmax = Math.max(1, ...list.map(x => x[2]));
+      const occupied = [...g.N];
+      const out = [];
+      list.forEach(([st, disp, c], i) => {
+        const fs = 12 + 6*(c/cmax); const gh = {k:st, text:disp, c, fs, w:textW(disp, fs)+12, h:fs*1.5, x:n.x, y:n.y};
+        const a0 = -Math.PI/2 + i*(2*Math.PI/Math.max(list.length,1));
+        let done = false;
+        for(let t=0; t<900 && !done; t++){ const r = (n.w/2 + 26) + t*0.6, a = a0 + t*0.11; gh.x = n.x + Math.cos(a)*r*1.25; gh.y = n.y + Math.sin(a)*r*0.7;
+          if(gh.x-gh.w/2 < 6 || gh.x+gh.w/2 > g.W-6 || gh.y-gh.h/2 < 6 || gh.y+gh.h/2 > g.H-6) continue;
+          if(!occupied.some(o => collides(gh, o, 8, 4))) done = true; }
+        if(done){ occupied.push(gh); out.push(gh); }
+      });
+      $("netGhost").innerHTML = out.map(gh => `<g class="ghost" data-k="${esc(gh.k)}" data-d="${esc(gh.text)}" transform="translate(${gh.x.toFixed(1)},${gh.y.toFixed(1)})"><line x1="${(n.x-gh.x).toFixed(1)}" y1="${(n.y-gh.y).toFixed(1)}" x2="0" y2="0"/><rect x="${(-gh.w/2).toFixed(1)}" y="${(-gh.h/2).toFixed(1)}" width="${gh.w.toFixed(1)}" height="${gh.h.toFixed(1)}" rx="${(gh.h/2).toFixed(1)}"/><text y="${(gh.fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${gh.fs.toFixed(1)}"><title>‘${esc(n.text)}’와 함께 등장 ${gh.c}건</title>${esc(gh.text)}</text></g>`).join("");
+      $("netGhost").querySelectorAll(".ghost").forEach(el => {
+        el.onmouseenter = () => { clearTimeout(clearTimer); };
+        el.onmouseleave = () => { if(!S.pin) scheduleClear(); };
+        el.onclick = (ev) => { ev.stopPropagation(); renderNetSide(el.dataset.k, key, el.dataset.d); };
+      });
+    }
     function highlight(key){
-      if(!key){ nodeEls.forEach(el => el.classList.remove("on","off","center","pin")); edgeEls.forEach(el => el.classList.remove("on")); svg.classList.remove("focus"); return; }
+      clearTimeout(clearTimer);
+      if(!key){ nodeEls.forEach(el => el.classList.remove("on","off","center","pin")); edgeEls.forEach(el => el.classList.remove("on")); svg.classList.remove("focus"); $("netGhost").innerHTML=""; return; }
       const nbs = g.nb.get(key) || new Set();
       svg.classList.add("focus");
       nodeEls.forEach((el,k) => { const hit = k===key || nbs.has(k); el.classList.toggle("on", hit); el.classList.toggle("center", k===key); el.classList.toggle("off", !hit); el.classList.toggle("pin", k===S.pin); });
       edgeEls.forEach((el,i) => { const e = g.E[i]; el.classList.toggle("on", g.N[e.a].k===key || g.N[e.b].k===key); });
+      showGhosts(key);
     }
-    let hoverTimer = null;
+    function scheduleClear(){ clearTimeout(clearTimer); clearTimer = setTimeout(() => { if(S.pin){ highlight(S.pin); renderNetSide(S.pin); } else { highlight(null); renderNetSide(null); } }, 220); }
     nodeEls.forEach((el, k) => {
-      el.onmouseenter = () => { S.hover = k; highlight(k); clearTimeout(hoverTimer); hoverTimer = setTimeout(() => renderNetSide(k), 60); };
-      el.onmouseleave = () => { S.hover = null; clearTimeout(hoverTimer); if(S.pin){ highlight(S.pin); renderNetSide(S.pin); } else { highlight(null); renderNetSide(null); } };
+      el.onmouseenter = () => { clearTimeout(clearTimer); S.hover = k; highlight(k); clearTimeout(hoverTimer); hoverTimer = setTimeout(() => renderNetSide(k), 60); };
+      el.onmouseleave = () => { S.hover = null; clearTimeout(hoverTimer); scheduleClear(); };
       el.onclick = (ev) => { ev.stopPropagation(); S.pin = (S.pin===k) ? null : k; highlight(S.pin||k); renderNetSide(S.pin||k); syncHash(); };
       el.ondblclick = (ev) => { ev.stopPropagation(); const hit = findKeyword(k); if(hit){ S.mode="keyword"; S.cat=hit.cat; S.kw=hit.o.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0, behavior:"smooth"}); } };
     });
@@ -630,29 +655,30 @@
     const setVB = () => svg.setAttribute("viewBox", vb.map(v => v.toFixed(1)).join(" "));
     svg.addEventListener("wheel", ev => { ev.preventDefault(); const rect = svg.getBoundingClientRect(); const px = vb[0] + (ev.clientX-rect.left)/rect.width*vb[2], py = vb[1] + (ev.clientY-rect.top)/rect.height*vb[3];
       const f = ev.deltaY>0 ? 1.12 : 0.89; const nw = Math.min(g.W*2, Math.max(g.W/5, vb[2]*f)), nh = nw*g.H/g.W; vb = [px - (px-vb[0])*nw/vb[2], py - (py-vb[1])*nh/vb[3], nw, nh]; setVB(); }, {passive:false});
-    svg.addEventListener("pointerdown", ev => { if(ev.target.closest(".word")) return; drag = {x:ev.clientX, y:ev.clientY, vb:[...vb]}; svg.classList.add("drag"); svg.setPointerCapture(ev.pointerId); });
+    svg.addEventListener("pointerdown", ev => { if(ev.target.closest(".word,.ghost")) return; drag = {x:ev.clientX, y:ev.clientY, vb:[...vb]}; svg.classList.add("drag"); svg.setPointerCapture(ev.pointerId); });
     svg.addEventListener("pointermove", ev => { if(!drag) return; const rect = svg.getBoundingClientRect(); vb[0] = drag.vb[0] - (ev.clientX-drag.x)/rect.width*vb[2]; vb[1] = drag.vb[1] - (ev.clientY-drag.y)/rect.height*vb[3]; setVB(); });
     svg.addEventListener("pointerup", () => { drag=null; svg.classList.remove("drag"); });
     if(S.pin && nodeEls.has(S.pin)){ highlight(S.pin); renderNetSide(S.pin); } else { S.pin = null; renderNetSide(null); }
   }
-  function renderNetSide(key){
+  function renderNetSide(key, origin, ghostText){
     const v = S.view, g = S.graph, el = $("netSide");
     if(!key){
-      const top = g.N.filter(n => n.type==="p").map(n => ({n, deg:(g.nb.get(n.k)||new Set()).size})).sort((a,b)=>b.deg-a.deg).slice(0,8);
-      el.innerHTML = `<h2>연결이 많은 키워드</h2><p class="narr" style="color:var(--muted)">관계망의 점에 마우스를 올리면 그 키워드의 연결과 관련 기사가 여기에 나타납니다. 지금 연결이 가장 많은 키워드는 다음과 같습니다.</p>
-        <ol class="plist">${top.map(({n,deg}) => `<li><span class="n"></span><span class="k link" data-k="${esc(n.k)}"><span class="cat" style="background:${CAT_COLOR[n.cat]};margin-right:6px">${n.cat}</span>${esc(n.text)}</span><span class="m">연결 ${deg}</span></li>`).join("")}</ol>`;
+      const top = g.N.map(n => ({n, deg:((v.related||{})[n.k]||[]).length})).sort((a,b)=>b.deg-a.deg || b.n.s-a.n.s).slice(0,8);
+      el.innerHTML = `<h2>연관어가 많은 키워드</h2><p class="narr" style="color:var(--muted)">글자에 마우스를 올리면 그 키워드와 함께 다뤄진 말들이 주변에 나타나고, 관련 기사가 여기에 뜹니다. 지금 연관어가 가장 많은 키워드는 다음과 같습니다.</p>
+        <ol class="plist">${top.map(({n,deg}) => `<li><span class="n"></span><span class="k link" data-k="${esc(n.k)}"><span class="cat" style="background:${CAT_COLOR[n.cat]};margin-right:6px">${n.cat}</span>${esc(n.text)}</span><span class="m">연관어 ${deg}</span></li>`).join("")}</ol>`;
       el.querySelectorAll(".k.link").forEach(x => x.onclick = () => { S.pin = x.dataset.k; renderNetwork(); syncHash(); });
       return;
     }
-    const n = g.N.find(x => x.k===key); if(!n) return;
+    let n = g.N.find(x => x.k===key);
+    if(!n){ if(!origin) return; n = {k:key, text:ghostText||key, cat:"", type:"s"}; }
     const hit = findKeyword(key);
     let arts = [];
     if(hit) arts = (v.articles[hit.o.k]||[]);
-    else { const seen = new Set(); for(const pk of (g.nb.get(key)||[])) for(const a of (v.articles[pk]||[])) if(!seen.has(a.u) && a.t.toLowerCase().includes(n.text.toLowerCase())){ seen.add(a.u); arts.push(a); } arts.sort((a,b) => (b.d||"").localeCompare(a.d||"")); }
+    else { const srcs = origin ? [origin] : [...(g.nb.get(key)||[])]; const seen = new Set(); for(const pk of srcs) for(const a of (v.articles[pk]||[])) if(!seen.has(a.u) && a.t.toLowerCase().includes(n.text.toLowerCase())){ seen.add(a.u); arts.push(a); } arts.sort((a,b) => (b.d||"").localeCompare(a.d||"")); }
     const rel = ((v.related||{})[key]||[]).slice(0,10);
     const st = Object.values(v.stories||{}).flat().find(s => (s.kw||[]).some(([k]) => k===n.text) || s.label.includes(key));
     el.innerHTML = `<h2>${n.type==="p" ? `<span class="cat" style="background:${CAT_COLOR[n.cat]}">${n.cat}</span>` : `<span class="cat" style="background:var(--dim)">연관어</span>`} ${esc(n.text)} ${hit ? `<span class="sub">${hit.cat} ${hit.o.r}위 · ${hit.o.s.toFixed(1)}점</span>` : ""}</h2>
-      ${hit ? `<p class="narr">${esc(narrativeFor(hit))}</p>` : `<p class="narr" style="color:var(--muted)">‘${esc(n.text)}’은(는) ${(g.nb.get(key)||new Set()).size}개 순위 키워드와 함께 등장한 연관어입니다.</p>`}
+      ${hit ? `<p class="narr">${esc(narrativeFor(hit))}</p>` : `<p class="narr" style="color:var(--muted)">‘${esc(n.text)}’은(는) ${origin ? `‘${esc((g.N.find(x=>x.k===origin)||{}).text||origin)}’와 함께 등장한 연관어입니다. 아래는 두 말이 같이 나온 기사입니다.` : "연관어입니다."}</p>`}
       ${rel.length ? `<div class="chips">${rel.map(([st,disp,c]) => `<span class="chip k" data-k="${esc(st)}">${esc(disp)}<small>${c}</small></span>`).join("")}</div>` : ""}
       ${st ? `<p class="chartnote">관련 스토리: <a href="#" data-story="${esc(st.id)}" data-cat="${esc(st.cat||"전체")}"><b>${esc(st.title)}</b></a></p>` : ""}
       <h2 style="font-size:15px;margin-top:10px">관련 기사 <span class="sub">${arts.length}건</span></h2>
