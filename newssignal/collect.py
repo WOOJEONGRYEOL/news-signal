@@ -13,6 +13,7 @@ from .keywords import CLAUSE_MARK, Extractor, load_stopwords, query_tokens, stem
 from .sources import google_news, google_trends, nate, naver, yna, zum
 from .sources.google_trends import REGIONS
 from .store import Store
+from .stories import build_stories, related_keywords
 
 CATEGORIES = ["전체", "정치", "경제", "사회", "생활/문화", "세계", "IT/과학", "스포츠", "연예"]
 SOURCE_LABEL = {"google": "G", "nate": "N", "zum": "Z"}
@@ -114,8 +115,14 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
     for cat in corpus:
         corpus[cat] = [a for a in corpus[cat] if not BOILERPLATE.match(a.title)]
     all_articles: list[Article] = [a for arts in corpus.values() for a in arts]
-    rank_articles = [Article(r["title"], r["url"], r["press"], r["published"], "", "naver_ranking") for r in ranking]
+    ranked_by_url: dict[str, list[str]] = {}
+    for r in ranking:
+        ranked_by_url.setdefault(r["url"], []).append(r["press"])
+    corpus_urls = {a.url for a in all_articles}
+    rank_articles = [Article(r["title"], r["url"], r["press"], r["published"], "", "naver_ranking") for r in ranking if r["url"] not in corpus_urls]
     everything = all_articles + rank_articles
+    press_names = {a.press.lower() for a in everything if a.press} | {p.lower() for ps in ranked_by_url.values() for p in ps}
+    stop = stop | {p for p in press_names if len(p) >= 2}
     ex = Extractor([a.title for a in everything], stop)
     kws_by_title: list[set[str]] = []
     for i, a in enumerate(everything):
@@ -161,7 +168,7 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                     continue
                 row["search"] += t.weight * frac
                 row["src"].add(t.source)
-            row["consume"] = sum(1 for a in rank_articles if stems_match(kw, a.stems))
+            row["consume"] = sum(1 for a in everything if a.url in ranked_by_url and stems_match(kw, a.stems))
         return rows
 
     cat_idx = {cat: [i for i, a in enumerate(all_articles) if a.category == cat] for cat in corpus}
@@ -276,6 +283,46 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
             articles[kw] = sorted(articles[kw], key=lambda a: a["d"], reverse=True)[:15]
             time.sleep(0.4)
 
+    # ---------- 4b. 스토리(기사 묶음) ----------
+    gt_news_urls = {ti: {n["url"] for n in t.news} for ti, t in enumerate(terms) if t.news}
+    prev_stories, prev_story_ranks = store.prev_stories(ts)
+    story_objs = build_stories(everything, kws_by_title, ex, ranked_by_url, terms, term_kw, gt_news_urls, prev_stories, ts, cfg.story_weights)
+    stories: dict[str, list[dict]] = {c: [] for c in CATEGORIES}
+    story_articles: dict[str, list[dict]] = {}
+    for st in story_objs:
+        rep = everything[st.rep]
+        row = {"id": st.id, "s": st.score, "label": st.label, "ld": st.label_display, "title": rep.title, "url": rep.url, "press": rep.press,
+               "n": st.n_articles, "outlets": st.outlets, "ranked": st.ranked, "search": round(st.search, 2),
+               "src": "".join(SOURCE_LABEL[x] for x in sorted(st.sources)), "spike": round(st.spike, 2), "first": st.first_seen,
+               "kw": st.keywords, "cat": st.category}
+        for cat in dict.fromkeys(("전체", st.category)):
+            if cat in stories and len(stories[cat]) < cfg.keep_n:
+                stories[cat].append(dict(row))
+        seen_u: set[str] = set()
+        arts: list[dict] = []
+        for i in st.ids:
+            a = everything[i]
+            if a.url in seen_u:
+                continue
+            seen_u.add(a.url)
+            d = a.out()
+            d["rp"] = ranked_by_url.get(a.url, [])
+            arts.append(d)
+        arts.sort(key=lambda a: (-len(a["rp"]), a["d"]), reverse=False)
+        arts.sort(key=lambda a: -len(a["rp"]))
+        story_articles[st.id] = arts[:30]
+    for cat, rows in stories.items():
+        pr = prev_story_ranks.get(cat, {})
+        for i, row in enumerate(rows, 1):
+            row["r"] = i
+            row["d"] = "new" if row["id"] not in pr else pr[row["id"]] - i
+    focus = sorted({o["k"] for rows in categories.values() for o in rows})
+    related = {kw: rel for kw, rel in related_keywords(everything, focus, stop).items() if rel}
+    hop2 = sorted({k for rel in related.values() for k, _ in rel} - set(focus))
+    related_more = {kw: rel for kw, rel in related_keywords(everything, hop2, stop).items() if rel}
+    related_display = {kw: [[k, ex.display(k), c] for k, c in rel] for kw, rel in related.items()}
+    related_more_display = {kw: [[k, ex.display(k), c] for k, c in rel] for kw, rel in related_more.items()}
+
     # ---------- 5. 지역 ----------
     national = {it["keyword"].lower() for it in gt_kr}
     region_count: Counter[str] = Counter()
@@ -291,9 +338,12 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
         "naver_ranking": [{"press": r["press"], "r": r["rank"], "t": r["title"], "u": r["url"], "d": r["published"]} for r in ranking],
     }
     meta = {"corpus": {c: len(a) for c, a in corpus.items()}, "ranking_rows": len(ranking), "terms": len(terms),
-            "regions": len(gt_regions), "baseline_snapshots": n_base, "failures": [l for l in log if l.startswith("FAIL")]}
-    snap = {"ts": ts, "meta": meta, "categories": categories, "articles": articles, "portals": portals,
-            "regions": regions, "region_names": REGIONS, "home_press": cfg.home_press, "weights": W, "log": log}
+            "regions": len(gt_regions), "baseline_snapshots": n_base, "stories": len(story_objs),
+            "failures": [l for l in log if l.startswith("FAIL")]}
+    snap = {"ts": ts, "meta": meta, "categories": categories, "articles": articles, "stories": stories,
+            "story_articles": story_articles, "related": related_display, "related_more": related_more_display, "portals": portals,
+            "regions": regions, "region_names": REGIONS, "home_press": cfg.home_press, "weights": W,
+            "story_weights": cfg.story_weights, "log": log}
     if verbose:
         for l in log:
             print(" ", l)

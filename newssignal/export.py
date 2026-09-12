@@ -19,6 +19,8 @@ def _write(path: Path, obj) -> None:
 
 def export_latest(cfg: Config, snap: dict) -> None:
     data = {k: v for k, v in snap.items() if k != "log"}
+    data["related"] = {**snap.get("related_more", {}), **snap.get("related", {})}
+    data.pop("related_more", None)
     data["version"] = __version__
     _write(cfg.site_dir / "data" / "latest.json", data)
 
@@ -32,12 +34,17 @@ def export_day(cfg: Config, store: Store, date: str) -> None:
         ids.append(s["id"])
         cats = {cat: [[r["keyword"], r["rank"], r["score"], r["search"], r["publish"], r["consume"], r["sources"], r["spike"], r["display"]] for r in rows]
                 for cat, rows in store.ranks_for(s["id"], cfg.keep_n).items()}
-        day["snapshots"].append({"ts": s["ts"], "cats": cats})
+        sts = {cat: [[r["story_id"], r["rank"], r["score"], r["label"], r["rep_title"], r["rep_url"], r["rep_press"], r["n_articles"],
+                      r["outlets"], r["search"], r["sources"], r["spike"], r["first_seen"], r["keywords"]] for r in rows]
+               for cat, rows in store.stories_for(s["id"], cfg.keep_n).items()}
+        day["snapshots"].append({"ts": s["ts"], "cats": cats, "stories": sts})
         extras["snapshots"].append({"ts": s["ts"], "portals": store.portal_items(s["id"]), "regions": store.regions(s["id"]),
-                                    "naver_ranking": store.ranking_news(s["id"], cfg.home_press, all_rows=False)})
+                                    "naver_ranking": store.ranking_news(s["id"], cfg.home_press, all_rows=False),
+                                    "related": store.related_for(s["id"])})
     _write(cfg.site_dir / "data" / "days" / f"{date}.json", day)
     _write(cfg.site_dir / "data" / "extras" / f"{date}.json", extras)
-    _write(cfg.site_dir / "data" / "articles" / f"{date}.json", {"date": date, "articles": store.articles_for_day(ids)})
+    _write(cfg.site_dir / "data" / "articles" / f"{date}.json", {"date": date, "articles": store.articles_for_day(ids),
+                                                                  "story_articles": store.story_articles_for_day(ids)})
 
 
 def export_manifest(cfg: Config, store: Store) -> None:
@@ -49,6 +56,7 @@ def export_manifest(cfg: Config, store: Store) -> None:
         "days": days,
         "home_press": cfg.home_press,
         "weights": cfg.weights,
+        "story_weights": cfg.story_weights,
         "top_n": cfg.top_n,
         "keep_n": cfg.keep_n,
         "region_names": REGIONS,

@@ -18,6 +18,7 @@ class Config:
     keep_n: int = 20                   # 이력 파일에 남길 순위 수(시계열용)
     weights: dict = field(default_factory=lambda: {"search": 0.35, "publish": 0.30, "consume": 0.15, "spike": 0.20})
     baseline_days: int = 7             # 급상승 판단 기준: 지난 N일 평균 기사 수
+    story_weights: dict = field(default_factory=lambda: {"consume": 0.35, "publish": 0.25, "search": 0.25, "spike": 0.15})
     region_codes: list[str] = field(default_factory=list)  # 빈 목록 = 17개 시·도 전부
 
     @property
@@ -41,8 +42,9 @@ def load(root: Path | None = None) -> Config:
         for k in ("home_press", "interval_minutes", "news_search_limit", "top_n", "keep_n", "region_codes", "baseline_days"):
             if k in data:
                 setattr(cfg, k, data[k])
-        if "weights" in data:
-            w = {**cfg.weights, **data["weights"]}
-            total = sum(w.values()) or 1.0
-            cfg.weights = {k: v / total for k, v in w.items()}
+        for name in ("weights", "story_weights"):
+            if name in data:
+                w = {**getattr(cfg, name), **data[name]}
+                total = sum(w.values()) or 1.0
+                setattr(cfg, name, {k: v / total for k, v in w.items()})
     return cfg

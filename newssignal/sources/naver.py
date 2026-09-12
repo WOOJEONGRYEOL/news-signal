@@ -18,7 +18,7 @@ def clean(s: str) -> str:
 
 
 def strip_query(url: str) -> str:
-    return url.split("?", 1)[0]
+    return url.split("?", 1)[0].replace("n.news.naver.com/mnews/article/", "n.news.naver.com/article/")
 
 
 def fetch_ranking(now: datetime) -> list[dict]:

@@ -12,3 +12,9 @@ search = 0.35
 publish = 0.30
 consume = 0.15
 spike = 0.20
+
+[story_weights]               # 스토리(기사 묶음) 점수
+consume = 0.35
+publish = 0.25
+search = 0.25
+spike = 0.15

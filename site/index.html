@@ -30,38 +30,46 @@
   .live.off{background:var(--dim);box-shadow:none}
   .timectl{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .timectl label{color:var(--muted);font-size:13px}
-  nav.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:14px 0 12px}
-  nav.tabs button{padding:7px 14px;border-radius:999px}
+  .modes{display:flex;gap:6px;padding:14px 0 0}
+  .modes button{padding:7px 16px;border-radius:8px;font-weight:600}
+  nav.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 12px}
+  nav.tabs button{padding:6px 13px;border-radius:999px}
   .grid{display:grid;grid-template-columns:minmax(380px,5fr) minmax(420px,7fr);gap:16px}
   @media (max-width:980px){.grid{grid-template-columns:1fr}}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
-  .panel h2{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:10px}
+  .panel h2{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .panel h2 .sub{color:var(--muted);font-weight:400;font-size:12.5px}
   table.rank{width:100%;border-collapse:collapse}
   table.rank th{color:var(--muted);font-weight:500;font-size:12px;text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
   table.rank td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
   table.rank tr.row{cursor:pointer}
   table.rank tr.row:hover td{background:var(--panel2)}
-  table.rank tr.sel td{background:#22293300;box-shadow:inset 3px 0 0 var(--accent);background:var(--panel2)}
+  table.rank tr.sel td{box-shadow:inset 3px 0 0 var(--accent);background:var(--panel2)}
   .num{color:var(--muted);width:28px;text-align:right;font-variant-numeric:tabular-nums}
   .kw{font-weight:700;font-size:15px}
+  .hl{font-weight:700;font-size:14px;line-height:1.35}
+  .meta{color:var(--muted);font-size:12px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .meta .lb{color:#cfd3d8}
   .delta{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .delta.up{color:var(--up)} .delta.down{color:var(--down)} .delta.new{color:var(--accent);font-weight:700} .delta.same{color:var(--dim)}
-  .bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#0b0e12;min-width:90px}
+  .bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#0b0e12;min-width:80px}
   .bar i{display:block;height:100%}
   .bar .s{background:var(--search)} .bar .p{background:var(--publish)} .bar .c{background:var(--consume)} .bar .k{background:var(--spike)}
-  .score{font-variant-numeric:tabular-nums;text-align:right;width:52px;color:var(--text)}
+  .score{font-variant-numeric:tabular-nums;text-align:right;width:52px}
   .src{display:inline-flex;gap:3px}
   .src b{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;background:#0b0e12;color:var(--muted);border:1px solid var(--line)}
   .src b.G{color:#7fb1ff;border-color:#2d4d84} .src b.N{color:#ffb27a;border-color:#7a4a25} .src b.Z{color:#9ee0c7;border-color:#2a6b55}
   .empty{color:var(--muted);padding:18px 6px}
-  /* detail */
-  .detail h2{font-size:20px}
-  .detail h2 .pt{color:var(--accent);font-variant-numeric:tabular-nums}
+  .detail h2{font-size:19px;line-height:1.35}
+  .detail h2 .pt{color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
   .narr{color:#cfd3d8;margin:0 0 12px;line-height:1.65}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
   .chip{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
   .chip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:1px}
+  .chip.k{color:var(--text);cursor:pointer}
+  .chip.k:hover{border-color:var(--accent)}
+  .chip.k.on{background:var(--accent);color:#14110a;border-color:var(--accent);font-weight:700}
+  .chip.k small{color:inherit;opacity:.65;margin-left:4px}
   .charthead{display:flex;align-items:center;gap:8px;margin:6px 0 4px}
   .charthead span{color:var(--muted);font-size:12.5px;margin-right:auto}
   .chart{width:100%;height:190px;display:block}
@@ -75,6 +83,24 @@
   ul.news .t{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;padding-top:2px}
   ul.news .p{color:var(--muted);font-size:12px;margin-left:6px}
   ul.news .o{font-size:10.5px;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:1px}
+  ul.news .rp{font-size:10.5px;color:var(--consume);border:1px solid #5a3550;border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:1px}
+  ul.news li.dimmed{opacity:.35}
+  /* 연관어 지도 */
+  .ring{width:100%;height:260px;display:block}
+  .ring text{cursor:pointer;fill:var(--text)}
+  .ring text:hover{fill:var(--accent)}
+  .ring .center{fill:var(--accent);font-weight:800}
+  .ring line{stroke:var(--line)}
+  .ring .rk{fill:#7fb1ff}
+  .crumbs{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin:4px 0 8px}
+  .crumbs b{color:var(--text)}
+  .crumbs button{padding:2px 8px;font-size:12px}
+  /* 키워드 지도(클라우드) */
+  .cloud{width:100%;height:520px;display:block}
+  .cloud text{cursor:pointer;font-weight:700}
+  .cloud text:hover{opacity:.7}
+  .cloudlegend{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:6px}
+  .cloudlegend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
   /* portals */
   .portals{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px}
   @media (max-width:1200px){.portals{grid-template-columns:repeat(2,1fr)}}
@@ -85,7 +111,6 @@
   ol.plist .k{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   ol.plist .m{color:var(--muted);font-size:12px;white-space:nowrap}
   ol.plist .k.link{cursor:pointer}
-  .home{color:var(--accent);font-weight:700}
   /* regions */
   .regions{display:grid;grid-template-columns:minmax(300px,2fr) minmax(280px,3fr);gap:16px;margin-top:16px}
   @media (max-width:980px){.regions{grid-template-columns:1fr}}
@@ -101,12 +126,12 @@
   .tile.blank{visibility:hidden}
   .tag{font-size:10.5px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
   .tag.loc{color:var(--accent);border-color:#5a4a1e} .tag.nat{color:#7fb1ff;border-color:#2d4d84}
-  /* legend */
   .legend{margin-top:16px;color:#b8bec7;font-size:13px}
   .legend p{margin:6px 0}
   .legend i.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 5px 0 2px;vertical-align:-1px}
   .foot{color:var(--dim);font-size:12px;margin-top:10px}
   .err{background:#3a1d1d;border:1px solid #6a2b2b;color:#ffd7d7;padding:10px 14px;border-radius:8px;margin:12px 0}
+  .hidden{display:none!important}
 </style>
 </head>
 <body>
@@ -122,18 +147,29 @@
     </div>
   </header>
   <div id="err"></div>
+  <div class="modes" id="modes">
+    <button data-mode="story" class="on">스토리</button>
+    <button data-mode="keyword">키워드</button>
+    <button data-mode="map">키워드 지도</button>
+  </div>
   <nav class="tabs" id="tabs"></nav>
 
-  <div class="grid">
-    <section class="panel">
-      <h2>카테고리 Top 10 <span class="sub" id="rankSub"></span></h2>
+  <div class="grid" id="mainGrid">
+    <section class="panel" id="listPanel">
+      <h2 id="listTitle">스토리 Top 10 <span class="sub" id="rankSub"></span></h2>
       <table class="rank">
-        <thead><tr><th class="num">#</th><th>키워드</th><th>변동</th><th>신호 구성</th><th style="text-align:right">점수</th><th>검색</th></tr></thead>
+        <thead id="rankHead"></thead>
         <tbody id="rankBody"></tbody>
       </table>
     </section>
-    <section class="panel detail" id="detail"><div class="empty">왼쪽 목록에서 키워드를 누르면 흐름과 관련 기사가 나옵니다.</div></section>
+    <section class="panel detail" id="detail"><div class="empty">왼쪽 목록에서 항목을 누르면 흐름과 관련 기사가 나옵니다.</div></section>
   </div>
+
+  <section class="panel hidden" id="mapPanel">
+    <h2>키워드 지도 <span class="sub" id="mapSub">크기는 종합점수, 색은 카테고리 · 누르면 그 키워드로 이동</span></h2>
+    <div id="cloud"></div>
+    <div class="cloudlegend" id="cloudLegend"></div>
+  </section>
 
   <div class="portals">
     <section class="panel"><h2>구글 트렌드 <span class="sub">전국 급상승</span></h2><ol class="plist" id="pGoogle"></ol></section>
@@ -151,13 +187,14 @@
 
   <section class="panel legend">
     <h2>읽는 법</h2>
-    <p><b>종합점수</b>는 네 가지 신호를 더한 값입니다(가중치는 설정값이며 <code>config.toml</code>에서 바꿀 수 있습니다).
-      <i class="sw" style="background:var(--search)"></i><b>검색</b> 구글 트렌드·네이트·줌 실시간 검색어에 올라 있는지(순위·트래픽 반영, <span id="wS"></span>)
-      <i class="sw" style="background:var(--publish)"></i><b>발행</b> 이 카테고리 기사 제목에 등장한 건수(<span id="wP"></span>)
-      <i class="sw" style="background:var(--consume)"></i><b>소비</b> 네이버 언론사별 ‘많이 본 기사’ 제목에 등장한 건수(<span id="wC"></span>)
-      <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 지난 7일 평균 기사 수 대비 몇 배인지(<span id="wK"></span>).</p>
-    <p><b>변동</b>은 직전 수집 대비 순위 이동입니다. <b>검색</b> 칸의 G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다.</p>
-    <p>기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음).</p>
+    <p><b>스토리</b>는 같은 사건을 다룬 기사 묶음입니다. 제목은 묶음을 대표하는 기사 한 줄이고, 그 아래 작은 글씨가 묶음의 공통 키워드입니다. 스토리 점수는
+      <i class="sw" style="background:var(--consume)"></i><b>소비</b> 네이버 언론사별 ‘많이 본 기사’에 이 사건 기사를 올린 언론사 수(<span id="sC"></span>)
+      <i class="sw" style="background:var(--publish)"></i><b>발행</b> 묶인 기사 수(<span id="sP"></span>)
+      <i class="sw" style="background:var(--search)"></i><b>검색</b> 구글 트렌드·네이트·줌 실시간 검색어와 맞물리는지(<span id="sS"></span>)
+      <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 처음 등장 후 3시간 안이거나 직전보다 기사가 늘었는지(<span id="sK"></span>)를 더한 값입니다.</p>
+    <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>키워드 지도</b>는 같은 키워드를 한눈에 펼친 화면입니다.</p>
+    <p><b>변동</b>은 직전 수집 대비 순위 이동, G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다. 가중치는 <code>config.toml</code>에서 바꿀 수 있습니다.</p>
+    <p>기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
     <p class="foot" id="foot"></p>
   </section>
 </div>
@@ -165,9 +202,9 @@
 <script>
 (function(){
   const CATS = ["전체","정치","경제","사회","생활/문화","세계","IT/과학","스포츠","연예"];
+  const CAT_COLOR = {"정치":"#e0645c","경제":"#4a7fd4","사회":"#2e9b80","생활/문화":"#c86fa8","세계":"#f5b73b","IT/과학":"#7fd1e8","스포츠":"#9ee07a","연예":"#f39ab5","전체":"#e8e6e1"};
   const SEARCH_FULL = 2.5, SPIKE_FULL = 5;
   const ORIGIN = {naver_section:"네이버", yna:"연합뉴스", naver_ranking:"네이버 랭킹", google_trends:"구글 트렌드", google_news:"구글 뉴스", google_news_topic:"구글 뉴스"};
-  // 시·도 카토그램(대략의 지리 배치) — 4열
   const MAP = [
     ["KR-28","KR-11","KR-41","KR-42"],
     ["KR-44","KR-30","KR-43","KR-47"],
@@ -176,7 +213,8 @@
     ["KR-49",  null ,  null ,  null ],
   ];
   const $ = id => document.getElementById(id);
-  const S = { manifest:null, latest:null, view:null, cat:"전체", kw:null, range:"24h", viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{} };
+  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, path:[], filterKw:null,
+              range:"24h", viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{} };
 
   async function getJSON(path){
     const r = await fetch(path + (path.includes("?")?"&":"?") + "t=" + Date.now(), {cache:"no-store"});
@@ -194,7 +232,8 @@
     const d=new Date(iso); return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   function fmtTraffic(n){ if(!n) return ""; if(n>=10000) return (n/10000).toFixed(n%10000?1:0)+"만+"; if(n>=1000) return (n/1000).toFixed(n%1000?1:0)+"천+"; return n+"+"; }
-  const catLabel = c => c==="전체" ? "전체" : c;
+  const pct = w => w==null ? "" : Math.round(w*100)+"%";
+  const base = () => S.view.isLive ? null : S.view.ts;
 
   // ---------- 불러오기 ----------
   async function loadLive(){
@@ -211,21 +250,31 @@
     const i = day.snapshots.findIndex(s => s.ts===ts);
     if(i<0) throw new Error("스냅샷을 찾을 수 없습니다: "+ts);
     const snap = day.snapshots[i], prev = i>0 ? day.snapshots[i-1] : null;
-    const categories = {};
+    const categories = {}, stories = {};
     for(const cat of CATS){
       const rows = (snap.cats[cat]||[]).map(a => ({k:a[0], r:a[1], s:a[2], sig:{search:a[3], publish:a[4], consume:a[5], spike:a[7]||0}, src:a[6]||"", kd:a[8]||a[0]}));
       const pr = {}; if(prev) for(const a of (prev.cats[cat]||[])) pr[a[0]]=a[1];
       for(const o of rows) o.d = prev ? (o.k in pr ? pr[o.k]-o.r : "new") : null;
       categories[cat] = rows;
+      const srows = ((snap.stories||{})[cat]||[]).map(a => { const label = safeJSON(a[3], []), kw = safeJSON(a[13], []);
+        return {id:a[0], r:a[1], s:a[2], label, ld:label.join(" · "), title:a[4], url:a[5], press:a[6], n:a[7], outlets:a[8], search:a[9], src:a[10]||"", spike:a[11]||0, first:a[12], kw, cat}; });
+      const ps = {}; if(prev) for(const a of ((prev.stories||{})[cat]||[])) ps[a[0]]=a[1];
+      for(const o of srows) o.d = prev ? (o.id in ps ? ps[o.id]-o.r : "new") : null;
+      stories[cat] = srows;
     }
-    const ex = (extra.snapshots||[]).find(s => s.ts===ts) || {portals:{}, regions:{}, naver_ranking:[]};
-    S.view = { ts, isLive:false, categories, articles: arts.articles||{}, portals: {...ex.portals, naver_ranking: ex.naver_ranking||[]}, regions: ex.regions||{}, region_names: S.manifest.region_names, home_press: S.manifest.home_press, weights: S.manifest.weights, meta:{} };
+    const ex = (extra.snapshots||[]).find(s => s.ts===ts) || {portals:{}, regions:{}, naver_ranking:[], related:{}};
+    S.view = { ts, isLive:false, categories, stories, articles: arts.articles||{}, story_articles: arts.story_articles||{},
+               related: normRelated(ex.related||{}), portals: {...ex.portals, naver_ranking: ex.naver_ranking||[]}, regions: ex.regions||{},
+               region_names: S.manifest.region_names, home_press: S.manifest.home_press, weights: S.manifest.weights, story_weights: S.manifest.story_weights, meta:{} };
     S.viewTs = ts;
     renderAll();
   }
+  const safeJSON = (s, d) => { try { return typeof s==="string" ? JSON.parse(s) : (s ?? d); } catch(e){ return d; } };
+  // DB에 저장된 연관어는 [줄기, 횟수] 꼴, 라이브는 [줄기, 표시, 횟수] 꼴 → 통일
+  function normRelated(rel){ const out={}; for(const [k, list] of Object.entries(rel)) out[k] = list.map(x => x.length===3 ? x : [x[0], x[0], x[1]]); return out; }
   const dayFile = async d => S.days[d] || (S.days[d] = await getJSON(`data/days/${d}.json`).catch(()=>({date:d,snapshots:[]})));
   const extrasFile = async d => S.extras[d] || (S.extras[d] = await getJSON(`data/extras/${d}.json`).catch(()=>({snapshots:[]})));
-  const artsFile = async d => S.arts[d] || (S.arts[d] = await getJSON(`data/articles/${d}.json`).catch(()=>({articles:{}})));
+  const artsFile = async d => S.arts[d] || (S.arts[d] = await getJSON(`data/articles/${d}.json`).catch(()=>({articles:{}, story_articles:{}})));
 
   // ---------- 시점 선택 ----------
   function fillTimeSelects(){
@@ -248,37 +297,49 @@
   }
   function showErr(e){ $("err").innerHTML = `<div class="err">불러오지 못했습니다: ${esc(e.message||e)}</div>`; console.error(e); }
 
-  // ---------- 그리기 ----------
+  // ---------- 공통 그리기 ----------
   function renderAll(){
     $("err").innerHTML = "";
     const v = S.view, live = v.isLive;
-    $("status").innerHTML = `<span class="live ${live?"":"off"}"></span>${live?"실시간":"과거 시점"} · 수집 <b>${fmtTs(v.ts)}</b>` + (live && S.manifest.generated ? ` · 1분마다 새 수집을 확인합니다` : "");
+    $("status").innerHTML = `<span class="live ${live?"":"off"}"></span>${live?"실시간":"과거 시점"} · 수집 <b>${fmtTs(v.ts)}</b>` + (live ? ` · 1분마다 새 수집을 확인합니다` : "");
     $("nowBtn").classList.toggle("on", live);
     if(!live){ $("daySel").value = v.ts.slice(0,10); fillTimes(v.ts.slice(0,10)); $("timeSel").value = v.ts; }
-    const W = v.weights || S.manifest.weights || {};
+    const W = v.weights || S.manifest.weights || {}, SW = v.story_weights || S.manifest.story_weights || {};
     $("wS").textContent = pct(W.search); $("wP").textContent = pct(W.publish); $("wC").textContent = pct(W.consume); $("wK").textContent = pct(W.spike);
-    renderTabs(); renderRank(); renderPortals(); renderRegions();
-    if(S.kw && !(v.categories[S.cat]||[]).some(o => o.k===S.kw)) S.kw = null;
-    if(!S.kw){ const first = (v.categories[S.cat]||[])[0]; S.kw = first ? first.k : null; }
-    renderDetail();
+    $("sC").textContent = pct(SW.consume); $("sP").textContent = pct(SW.publish); $("sS").textContent = pct(SW.search); $("sK").textContent = pct(SW.spike);
+    renderModes(); renderTabs(); renderMain(); renderPortals(); renderRegions();
     const m = v.meta||{}; const corpus = m.corpus ? Object.values(m.corpus).reduce((a,b)=>a+b,0) : null;
-    $("foot").textContent = (corpus ? `이번 수집: 기사 ${corpus.toLocaleString()}건 · 네이버 랭킹 ${m.ranking_rows}건 · 지역 ${m.regions}곳 · 급상승 기준 스냅샷 ${m.baseline_snapshots}개` : "") + ` · News Signal v${S.manifest.version||""}`;
+    $("foot").textContent = (corpus ? `이번 수집: 기사 ${corpus.toLocaleString()}건 · 스토리 ${m.stories||0}개 · 네이버 랭킹 ${m.ranking_rows}건 · 지역 ${m.regions}곳 · 급상승 기준 스냅샷 ${m.baseline_snapshots}개` : "") + ` · News Signal v${S.manifest.version||""}`;
   }
-  const pct = w => w==null ? "" : Math.round(w*100)+"%";
-
+  function renderModes(){
+    $("modes").querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.mode===S.mode); b.onclick = () => { S.mode = b.dataset.mode; S.path=[]; S.filterKw=null; renderModes(); renderMain(); }; });
+  }
   function renderTabs(){
     $("tabs").innerHTML = CATS.map(c => `<button data-cat="${c}" class="${c===S.cat?"on":""}">${c}</button>`).join("");
-    $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; S.kw = null; renderRank(); const f=(S.view.categories[S.cat]||[])[0]; S.kw = f?f.k:null; renderDetail(); renderTabs(); });
+    $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; S.kw = null; S.story = null; S.path=[]; S.filterKw=null; renderTabs(); renderMain(); });
   }
-  function segs(o, rows, W){
-    const pmax = Math.max(1, ...rows.map(r => r.sig.publish||0));
-    const cmax = Math.max(1, ...Object.values(S.view.categories).flat().map(r => r.sig.consume||0));
-    return {
-      s: (W.search||0) * Math.min(1, (o.sig.search||0)/SEARCH_FULL),
-      p: (W.publish||0) * (o.sig.publish||0)/pmax,
-      c: (W.consume||0) * (o.sig.consume||0)/cmax,
-      k: (W.spike||0) * Math.min(1, Math.max(0, (o.sig.spike||0)-1)/(SPIKE_FULL-1)),
-    };
+  function renderMain(){
+    const map = S.mode==="map";
+    $("mainGrid").classList.toggle("hidden", map);
+    $("mapPanel").classList.toggle("hidden", !map);
+    if(map){ renderCloud(); return; }
+    if(S.mode==="story"){
+      $("listTitle").innerHTML = `스토리 Top ${S.manifest.top_n||10} <span class="sub" id="rankSub"></span>`;
+      $("rankHead").innerHTML = `<tr><th class="num">#</th><th>대표 기사 · 공통 키워드</th><th>변동</th><th>신호</th><th style="text-align:right">점수</th></tr>`;
+      renderStoryList();
+      const rows = S.view.stories[S.cat]||[];
+      if(S.story && !rows.some(o => o.id===S.story)) S.story = null;
+      if(!S.story && rows[0]) S.story = rows[0].id;
+      renderStoryDetail();
+    } else {
+      $("listTitle").innerHTML = `키워드 Top ${S.manifest.top_n||10} <span class="sub" id="rankSub"></span>`;
+      $("rankHead").innerHTML = `<tr><th class="num">#</th><th>키워드</th><th>변동</th><th>신호 구성</th><th style="text-align:right">점수</th><th>검색</th></tr>`;
+      renderRank();
+      const rows = S.view.categories[S.cat]||[];
+      if(S.kw && !rows.some(o => o.k===S.kw)) S.kw = null;
+      if(!S.kw && rows[0]) S.kw = rows[0].k;
+      renderDetail();
+    }
   }
   function deltaHtml(d){
     if(d==null) return `<span class="delta same">·</span>`;
@@ -288,44 +349,110 @@
     return `<span class="delta same">–</span>`;
   }
   const srcHtml = s => `<span class="src">${[...(s||"")].map(c => `<b class="${c}">${c}</b>`).join("")}</span>`;
-  function renderRank(){
-    const v = S.view, rows = (v.categories[S.cat]||[]).slice(0, S.manifest.top_n||10), W = v.weights||S.manifest.weights;
-    $("rankSub").textContent = `${catLabel(S.cat)} · ${fmtTs(v.ts)} 기준`;
-    if(!rows.length){ $("rankBody").innerHTML = `<tr><td colspan="6" class="empty">이 시점에는 순위가 없습니다.</td></tr>`; return; }
-    $("rankBody").innerHTML = rows.map(o => {
-      const g = segs(o, rows, W);
-      const bar = ["s","p","c","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("");
-      return `<tr class="row ${o.k===S.kw?"sel":""}" data-k="${esc(o.k)}"><td class="num">${o.r}</td><td class="kw">${esc(o.kd||o.k)}</td><td>${deltaHtml(o.d)}</td><td><div class="bar" title="검색 ${o.sig.search} · 발행 ${o.sig.publish}건 · 소비 ${o.sig.consume}건 · 급상승 ×${o.sig.spike||0}">${bar}</div></td><td class="score">${o.s.toFixed(1)}</td><td>${srcHtml(o.src)}</td></tr>`;
-    }).join("");
-    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.kw = tr.dataset.k; renderRank(); renderDetail(); });
+  const barHtml = (g, title) => `<div class="bar" title="${esc(title)}">${["c","p","s","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("")}</div>`;
+
+  // ---------- 스토리 ----------
+  function storySegs(o){
+    const SW = S.view.story_weights || S.manifest.story_weights || {};
+    const all = Object.values(S.view.stories||{}).flat();
+    const nmax = Math.max(1, ...all.map(r => r.n||0)), omax = Math.max(1, ...all.map(r => r.outlets||0));
+    return { c:(SW.consume||0)*(o.outlets||0)/omax, p:(SW.publish||0)*(o.n||0)/nmax, s:(SW.search||0)*Math.min(1,(o.search||0)/SEARCH_FULL), k:(SW.spike||0)*(o.spike||0) };
+  }
+  function renderStoryList(){
+    const v = S.view, rows = (v.stories[S.cat]||[]).slice(0, S.manifest.top_n||10);
+    const sub = $("rankSub"); if(sub) sub.textContent = `${S.cat} · ${fmtTs(v.ts)} 기준`;
+    if(!rows.length){ $("rankBody").innerHTML = `<tr><td colspan="5" class="empty">이 시점에는 스토리가 없습니다.</td></tr>`; return; }
+    $("rankBody").innerHTML = rows.map(o => `<tr class="row ${o.id===S.story?"sel":""}" data-id="${esc(o.id)}"><td class="num">${o.r}</td>
+      <td><div class="hl">${esc(o.title)}</div><div class="meta"><span class="lb">${esc(o.ld)}</span><span>· 기사 ${o.n}건 · 언론사 ${o.outlets}곳</span>${o.src?srcHtml(o.src):""}</div></td>
+      <td>${deltaHtml(o.d)}</td><td>${barHtml(storySegs(o), `소비 ${o.outlets}곳 · 발행 ${o.n}건 · 검색 ${o.search} · 급상승 ${o.spike}`)}</td><td class="score">${o.s.toFixed(1)}</td></tr>`).join("");
+    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; renderStoryList(); renderStoryDetail(); });
+  }
+  function storyNarrative(o){
+    const p = [];
+    p.push(`이 사건은 지금 기사 ${o.n}건으로 다뤄지고 있습니다.`);
+    if(o.outlets>=5) p.push(`언론사 ${o.outlets}곳의 ‘많이 본 기사’에 올라 있어, 수용자가 실제로 가장 많이 읽는 뉴스에 속합니다.`);
+    else if(o.outlets>0) p.push(`언론사 ${o.outlets}곳의 ‘많이 본 기사’에도 올라 실제로 읽히고 있습니다.`);
+    else p.push(`아직 ‘많이 본 기사’에는 오르지 않았습니다. 발행은 되지만 소비는 확인되지 않은 단계입니다.`);
+    const srcs = []; if(o.src.includes("G")) srcs.push("구글 트렌드"); if(o.src.includes("N")) srcs.push("네이트"); if(o.src.includes("Z")) srcs.push("줌");
+    if(srcs.length) p.push(`${srcs.join("·")} 실시간 검색어와도 맞물려 있습니다.`);
+    if(o.first){ const h = (new Date(S.view.ts) - new Date(o.first))/3600000; p.push(h<0.6 ? `이번 수집에서 처음 잡힌 새 스토리입니다.` : `${fmtRel(o.first, base())}(${fmtHM(o.first)})에 처음 등장했습니다.`); }
+    if(typeof o.d==="number" && o.d>0) p.push(`직전 수집보다 ${o.d}계단 올랐습니다.`);
+    else if(typeof o.d==="number" && o.d<0) p.push(`직전 수집보다 ${-o.d}계단 내려왔습니다.`);
+    return p.join(" ");
+  }
+  async function renderStoryDetail(){
+    const v = S.view, o = (v.stories[S.cat]||[]).find(x => x.id===S.story), el = $("detail");
+    if(!o){ el.innerHTML = `<div class="empty">왼쪽 목록에서 스토리를 누르면 흐름과 묶인 기사가 나옵니다.</div>`; return; }
+    const arts = (v.story_articles||{})[o.id]||[];
+    const fk = S.filterKw;
+    const shown = fk ? arts.filter(a => a.t.toLowerCase().includes(fk.toLowerCase())) : arts;
+    el.innerHTML = `
+      <h2><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.title)}</a> <span class="pt">${o.s.toFixed(1)}점</span> <span class="sub">${S.cat} ${o.r}위 ${deltaHtml(o.d)} · 대표 기사 ${esc(o.press)}</span></h2>
+      <p class="narr">${esc(storyNarrative(o))}</p>
+      <div class="chips" id="storyChips">${(o.kw||[]).map(([k,c]) => `<span class="chip k ${fk===k?"on":""}" data-k="${esc(k)}">${esc(k)}<small>${c}</small></span>`).join("")}
+        ${fk ? `<span class="chip k" data-k="">필터 해제 ✕</span>` : ""}</div>
+      <div class="chips">
+        <span class="chip"><i style="background:var(--consume)"></i>소비 ${o.outlets}곳</span>
+        <span class="chip"><i style="background:var(--publish)"></i>발행 ${o.n}건</span>
+        <span class="chip"><i style="background:var(--search)"></i>검색 ${o.search}</span>
+        <span class="chip"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
+        ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
+      </div>
+      <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>
+        <button id="r24" class="${S.range==="24h"?"on":""}">24시간</button><button id="r7" class="${S.range==="7d"?"on":""}">7일</button></div>
+      <div id="chart"><div class="chartnote">불러오는 중…</div></div>
+      <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
+      ${arts.length ? `<ul class="news">${arts.map(a => `<li class="${fk && !shown.includes(a) ? "dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${(a.rp||[]).length ? `<span class="rp">많이 본 · ${(a.rp||[]).length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`).join("")}</ul>`
+                    : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}`;
+    $("storyChips").querySelectorAll(".chip.k").forEach(c => c.onclick = () => { S.filterKw = c.dataset.k || null; renderStoryDetail(); });
+    $("r24").onclick = () => { S.range="24h"; renderStoryDetail(); };
+    $("r7").onclick = () => { S.range="7d"; renderStoryDetail(); };
+    try { drawChart(await series(o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
   }
 
+  // ---------- 키워드 ----------
+  function segs(o, rows, W){
+    const pmax = Math.max(1, ...rows.map(r => r.sig.publish||0));
+    const cmax = Math.max(1, ...Object.values(S.view.categories).flat().map(r => r.sig.consume||0));
+    return { s:(W.search||0)*Math.min(1,(o.sig.search||0)/SEARCH_FULL), p:(W.publish||0)*(o.sig.publish||0)/pmax, c:(W.consume||0)*(o.sig.consume||0)/cmax, k:(W.spike||0)*Math.min(1, Math.max(0,(o.sig.spike||0)-1)/(SPIKE_FULL-1)) };
+  }
+  function renderRank(){
+    const v = S.view, rows = (v.categories[S.cat]||[]).slice(0, S.manifest.top_n||10), W = v.weights||S.manifest.weights;
+    const sub = $("rankSub"); if(sub) sub.textContent = `${S.cat} · ${fmtTs(v.ts)} 기준`;
+    if(!rows.length){ $("rankBody").innerHTML = `<tr><td colspan="6" class="empty">이 시점에는 순위가 없습니다.</td></tr>`; return; }
+    $("rankBody").innerHTML = rows.map(o => { const g = segs(o, rows, W);
+      return `<tr class="row ${o.k===S.kw?"sel":""}" data-k="${esc(o.k)}"><td class="num">${o.r}</td><td class="kw">${esc(o.kd||o.k)}</td><td>${deltaHtml(o.d)}</td><td>${barHtml(g, `검색 ${o.sig.search} · 발행 ${o.sig.publish}건 · 소비 ${o.sig.consume}건 · 급상승 ×${o.sig.spike||0}`)}</td><td class="score">${o.s.toFixed(1)}</td><td>${srcHtml(o.src)}</td></tr>`; }).join("");
+    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.kw = tr.dataset.k; S.path=[]; renderRank(); renderDetail(); });
+  }
   function narrative(o){
     const v = S.view, sig = o.sig, parts = [];
-    const cat = S.cat==="전체" ? "전체" : S.cat;
-    if(sig.publish>0) parts.push(`‘${o.kd||o.k}’은(는) 지금 ${cat} 기사 ${sig.publish}건의 제목에 등장합니다.`);
+    if(sig.publish>0) parts.push(`‘${o.kd||o.k}’은(는) 지금 ${S.cat} 기사 ${sig.publish}건의 제목에 등장합니다.`);
     else parts.push(`‘${o.kd||o.k}’은(는) 아직 기사 제목에는 거의 보이지 않지만 검색은 많은 키워드입니다.`);
     if(sig.consume>0) parts.push(`네이버 언론사별 ‘많이 본 기사’ ${sig.consume}건에도 들어 있어 실제로 많이 읽히고 있습니다.`);
     const srcs = []; if(o.src.includes("G")) srcs.push("구글 트렌드"); if(o.src.includes("N")) srcs.push("네이트"); if(o.src.includes("Z")) srcs.push("줌");
     if(srcs.length) parts.push(`${srcs.join("·")} 실시간 검색어에도 올라 있습니다.`);
-    const base = S.manifest && (Object.keys(S.manifest.days||{}).length>1 || (v.meta&&v.meta.baseline_snapshots>2));
+    const hasBase = S.manifest && (Object.keys(S.manifest.days||{}).length>1 || (v.meta&&v.meta.baseline_snapshots>2));
     if(sig.baseline>0 && sig.spike>=2) parts.push(`지난 7일 평균(${sig.baseline}건)보다 ${sig.spike}배 많이 다뤄져 급상승 중입니다.`);
     else if(sig.baseline>0 && sig.spike<1) parts.push(`지난 7일 평균(${sig.baseline}건)보다는 줄어드는 흐름입니다.`);
-    else if(!sig.baseline && base && sig.publish>0) parts.push(`최근 7일 동안 처음 보이는 키워드입니다.`);
-    else if(!base) parts.push(`(급상승 여부는 수집 이력이 하루쯤 쌓이면 표시됩니다.)`);
+    else if(!sig.baseline && hasBase && sig.publish>0) parts.push(`최근 7일 동안 처음 보이는 키워드입니다.`);
+    else if(!hasBase) parts.push(`(급상승 여부는 수집 이력이 하루쯤 쌓이면 표시됩니다.)`);
     if(o.d==="new") parts.push(`직전 수집에는 없다가 새로 들어왔습니다.`);
     else if(typeof o.d==="number" && o.d>0) parts.push(`직전 수집보다 ${o.d}계단 올랐습니다.`);
     else if(typeof o.d==="number" && o.d<0) parts.push(`직전 수집보다 ${-o.d}계단 내려왔습니다.`);
     return parts.join(" ");
   }
-
+  function findKeyword(stem){ for(const cat of [S.cat, ...CATS]){ const hit=(S.view.categories[cat]||[]).find(o => o.k===stem); if(hit) return {cat, o:hit}; } return null; }
   async function renderDetail(){
-    const v = S.view, o = (v.categories[S.cat]||[]).find(x => x.k===S.kw);
-    const el = $("detail");
+    const v = S.view, o = (v.categories[S.cat]||[]).find(x => x.k===S.kw), el = $("detail");
     if(!o){ el.innerHTML = `<div class="empty">왼쪽 목록에서 키워드를 누르면 흐름과 관련 기사가 나옵니다.</div>`; return; }
     const arts = (v.articles[o.k]||[]);
+    const filters = S.path.map(p => p.d.toLowerCase());
+    const shown = filters.length ? arts.filter(a => filters.every(f => a.t.toLowerCase().includes(f))) : arts;
+    const focus = S.path.length ? S.path[S.path.length-1].k : o.k;
+    const focusD = S.path.length ? S.path[S.path.length-1].d : (o.kd||o.k);
+    const rel = (v.related||{})[focus] || [];
     el.innerHTML = `
-      <h2>${esc(o.kd||o.k)} <span class="pt">${o.s.toFixed(1)}점</span> <span class="sub">${catLabel(S.cat)} ${o.r}위 ${deltaHtml(o.d)}</span></h2>
+      <h2>${esc(o.kd||o.k)} <span class="pt">${o.s.toFixed(1)}점</span> <span class="sub">${S.cat} ${o.r}위 ${deltaHtml(o.d)}</span></h2>
       <p class="narr">${esc(narrative(o))}</p>
       <div class="chips">
         <span class="chip"><i style="background:var(--search)"></i>검색 ${o.sig.search}</span>
@@ -334,38 +461,94 @@
         <span class="chip"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
+      <h2 style="font-size:15px">연관어 <span class="sub">함께 등장한 말 · 누르면 그 조합으로 파고듭니다</span></h2>
+      <div class="crumbs" id="crumbs"><b>${esc(o.kd||o.k)}</b>${S.path.map((p,i) => ` › <b>${esc(p.d)}</b>`).join("")}${S.path.length ? ` <button id="crumbReset">처음으로</button>` : ""}</div>
+      <div id="ring">${rel.length ? "" : `<div class="chartnote">‘${esc(focusD)}’와 함께 자주 등장한 말이 아직 없습니다.</div>`}</div>
       <div class="charthead"><span>관심도 흐름 (종합점수)</span>
         <button id="r24" class="${S.range==="24h"?"on":""}">24시간</button><button id="r7" class="${S.range==="7d"?"on":""}">7일</button></div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
-      <h2 style="margin-top:14px">관련 기사 <span class="sub">${arts.length}건 · 최신순</span></h2>
-      ${arts.length ? `<ul class="news">${arts.map(a => `<li><span class="t">${esc(fmtRel(a.d, v.isLive?null:v.ts))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span><span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`).join("")}</ul>`
+      <h2 style="margin-top:14px">관련 기사 <span class="sub">${filters.length ? `‘${esc(S.path.map(p=>p.d).join(" + "))}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 최신순`}</span></h2>
+      ${arts.length ? `<ul class="news">${arts.map(a => `<li class="${filters.length && !shown.includes(a) ? "dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span><span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`).join("")}</ul>`
                     : `<div class="empty">이 시점에 저장된 관련 기사가 없습니다.</div>`}`;
+    if(rel.length) drawRing(focusD, rel);
+    const reset = $("crumbReset"); if(reset) reset.onclick = () => { S.path=[]; renderDetail(); };
     $("r24").onclick = () => { S.range="24h"; renderDetail(); };
     $("r7").onclick = () => { S.range="7d"; renderDetail(); };
-    try { drawChart(await series(o.k, S.cat), o); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
+    try { drawChart(await series(o.k, S.cat, "keyword"), "키워드"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
+  }
+  // 연관어 고리: 가운데 현재 말, 둘레에 연관어(글자 크기 = 함께 나온 횟수). 누르면 경로에 추가.
+  function drawRing(centerLabel, rel){
+    const W=640, H=260, cx=W/2, cy=H/2, R=Math.min(W,H)/2 - 40;
+    const max = Math.max(...rel.map(r => r[2]), 1);
+    const items = rel.slice(0,10).map((r,i) => { const a = -Math.PI/2 + i*(2*Math.PI/Math.min(rel.length,10)); const rr = R*(0.85+0.15*(i%2));
+      return {k:r[0], d:r[1], c:r[2], x:cx+Math.cos(a)*rr*1.9, y:cy+Math.sin(a)*rr, fs: 12 + 12*(r[2]/max)}; });
+    const inRank = k => !!findKeyword(k);
+    $("ring").innerHTML = `<svg class="ring" viewBox="0 0 ${W} ${H}">
+      ${items.map(it => `<line x1="${cx}" y1="${cy}" x2="${it.x.toFixed(1)}" y2="${it.y.toFixed(1)}" stroke-width="${(0.5+2*it.c/max).toFixed(1)}"/>`).join("")}
+      <text class="center" x="${cx}" y="${cy+6}" text-anchor="middle" font-size="18">${esc(centerLabel)}</text>
+      ${items.map(it => `<text class="${inRank(it.k)?"rk":""}" x="${it.x.toFixed(1)}" y="${(it.y+it.fs/3).toFixed(1)}" text-anchor="middle" font-size="${it.fs.toFixed(1)}" data-k="${esc(it.k)}" data-d="${esc(it.d)}"><title>함께 등장 ${it.c}건${inRank(it.k)?" · 순위에 있는 키워드(더블클릭하면 이동)":""}</title>${esc(it.d)}</text>`).join("")}
+    </svg><div class="chartnote">굵은 글자일수록 함께 등장한 기사가 많습니다. 파란 글자는 순위표에도 있는 키워드로, 더블클릭하면 그 키워드로 이동합니다.</div>`;
+    $("ring").querySelectorAll("text[data-k]").forEach(t => {
+      t.onclick = () => { S.path.push({k:t.dataset.k, d:t.dataset.d}); renderDetail(); };
+      t.ondblclick = () => { const hit = findKeyword(t.dataset.k); if(hit){ S.cat=hit.cat; S.kw=hit.o.k; S.path=[]; renderTabs(); renderMain(); } };
+    });
   }
 
-  async function series(kw, cat){
+  // ---------- 키워드 지도 ----------
+  function renderCloud(){
+    const v = S.view, cats = S.cat==="전체" ? CATS.filter(c => c!=="전체") : [S.cat];
+    const words = new Map();
+    for(const cat of cats) for(const o of (v.categories[cat]||[]).slice(0, S.cat==="전체" ? 12 : 30)){
+      const cur = words.get(o.k); if(!cur || cur.s < o.s) words.set(o.k, {k:o.k, text:o.kd||o.k, s:o.s, cat});
+    }
+    if(S.cat==="전체") for(const o of (v.categories["전체"]||[]).slice(0,20)){ const cur = words.get(o.k); if(!cur) words.set(o.k, {k:o.k, text:o.kd||o.k, s:o.s, cat:"전체"}); }
+    const list = [...words.values()].sort((a,b)=>b.s-a.s);
+    $("mapSub").textContent = `${S.cat} · ${list.length}개 · 크기는 종합점수, 색은 카테고리 · 누르면 그 키워드로 이동`;
+    if(!list.length){ $("cloud").innerHTML = `<div class="empty">표시할 키워드가 없습니다.</div>`; return; }
+    const W=1200, H=520, smax = list[0].s||1, smin = list[list.length-1].s||0;
+    const cv = document.createElement("canvas").getContext("2d");
+    const placed = [];
+    const out = [];
+    for(const w of list){
+      const fs = 14 + 34*((w.s - smin)/Math.max(1,(smax - smin)));
+      cv.font = `700 ${fs}px ${getComputedStyle(document.body).fontFamily}`;
+      const tw = cv.measureText(w.text).width + 8, th = fs*1.2;
+      let ok=false, x=W/2, y=H/2;
+      for(let i=0; i<600 && !ok; i++){ const a = 0.4*i, r = 3.2*a; x = W/2 + Math.cos(a)*r*1.6; y = H/2 + Math.sin(a)*r*0.8;
+        const box=[x-tw/2, y-th/2, x+tw/2, y+th/2];
+        if(box[0]<0||box[1]<0||box[2]>W||box[3]>H) continue;
+        ok = !placed.some(b => !(box[2]<b[0]||box[0]>b[2]||box[3]<b[1]||box[1]>b[3]));
+        if(ok) placed.push(box);
+      }
+      if(ok) out.push({...w, x, y, fs});
+    }
+    $("cloud").innerHTML = `<svg class="cloud" viewBox="0 0 ${W} ${H}">${out.map(w => `<text x="${w.x.toFixed(1)}" y="${(w.y+w.fs/3).toFixed(1)}" text-anchor="middle" font-size="${w.fs.toFixed(1)}" fill="${CAT_COLOR[w.cat]||"#ddd"}" data-k="${esc(w.k)}" data-cat="${esc(w.cat)}"><title>${esc(w.text)} · ${w.cat} · ${w.s.toFixed(1)}점</title>${esc(w.text)}</text>`).join("")}</svg>`;
+    $("cloudLegend").innerHTML = cats.map(c => `<span><i style="background:${CAT_COLOR[c]}"></i>${c}</span>`).join("") + (S.cat==="전체" ? `<span><i style="background:${CAT_COLOR["전체"]}"></i>전체(카테고리 밖)</span>` : "");
+    $("cloud").querySelectorAll("text[data-k]").forEach(t => t.onclick = () => {
+      const hit = findKeyword(t.dataset.k); S.mode="keyword"; S.cat = hit ? hit.cat : S.cat; S.kw = t.dataset.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0, behavior:"smooth"});
+    });
+  }
+
+  // ---------- 시계열 ----------
+  async function series(key, cat, kind){
     const end = S.viewTs ? new Date(S.viewTs) : new Date(S.manifest.latest||Date.now());
     const hours = S.range==="24h" ? 24 : 24*7;
     const start = new Date(end.getTime() - hours*3600*1000);
-    const dates = []; for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) dates.push(d.toISOString().slice(0,10));
-    // 로컬 날짜 기준으로 다시 계산 (toISOString은 UTC)
     const ld = []; for(let d=new Date(start); ; d.setDate(d.getDate()+1)){ ld.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); if(d>=end) break; }
     const endKey = `${end.getFullYear()}-${pad(end.getMonth()+1)}-${pad(end.getDate())}`; if(!ld.includes(endKey)) ld.push(endKey);
     const files = await Promise.all(ld.filter(d => (S.manifest.days||{})[d]).map(dayFile));
     const pts = [];
     for(const f of files) for(const s of f.snapshots){
       const t = new Date(s.ts); if(t<start || t>end) continue;
-      const row = (s.cats[cat]||[]).find(a => a[0]===kw);
+      const row = kind==="story" ? ((s.stories||{})[cat]||[]).find(a => a[0]===key) : (s.cats[cat]||[]).find(a => a[0]===key);
       pts.push({ts:s.ts, t, s: row?row[2]:0, r: row?row[1]:null});
     }
     pts.sort((a,b)=>a.t-b.t);
     return {pts, start, end};
   }
-  function drawChart(ser, o){
+  function drawChart(ser, what){
     const {pts, start, end} = ser, Wd=640, H=190, L=34, R=14, T=18, B=26;
-    if(pts.length<2){ $("chart").innerHTML = `<div class="chartnote">아직 시계열이 없습니다. 수집이 ${pts.length? "한 번" : "아직"} 이뤄졌습니다 — 30분 간격으로 쌓이면 곡선이 나타납니다.</div>`; return; }
+    if(pts.length<2){ $("chart").innerHTML = `<div class="chartnote">아직 시계열이 없습니다. 30분 간격으로 수집이 쌓이면 곡선이 나타납니다.</div>`; return; }
     const x = t => L + (t-start)/(end-start) * (Wd-L-R), y = s => T + (1 - s/100) * (H-T-B);
     let peak = pts[0]; for(const p of pts) if(p.s>peak.s) peak=p;
     const line = pts.map((p,i) => (i?"L":"M") + x(p.t).toFixed(1) + " " + y(p.s).toFixed(1)).join(" ");
@@ -382,7 +565,7 @@
       <text class="peaklbl" x="${Math.min(Wd-R-90, Math.max(L, x(peak.t)-30)).toFixed(1)}" y="${Math.max(12, y(peak.s)-9).toFixed(1)}">최고 ${peak.s.toFixed(1)} · ${fmtTs(peak.ts)}</text>
       <circle class="now" cx="${x(last.t).toFixed(1)}" cy="${y(last.s).toFixed(1)}" r="3"/>
       ${ticks}${hov}</svg>
-      <div class="chartnote">점은 수집 시각, 0점은 그 시각 Top ${S.manifest.keep_n||20} 밖. 최고점은 이슈가 가장 뜨거웠던 때입니다.</div>`;
+      <div class="chartnote">점은 수집 시각, 0점은 그 시각 ${what} Top ${S.manifest.keep_n||20} 밖. 최고점은 이슈가 가장 뜨거웠던 때입니다.</div>`;
   }
 
   // ---------- 포털 원본 ----------
@@ -395,9 +578,9 @@
     renderNaver();
   }
   function jumpTo(q){
-    // 순위표에 같은 키워드가 있으면 선택, 없으면 구글 뉴스 검색을 새 창으로
     const ql = q.toLowerCase();
-    for(const cat of CATS){ const hit = (S.view.categories[cat]||[]).find(o => o.k===ql || (o.kd||"").toLowerCase()===ql); if(hit){ S.cat=cat; S.kw=hit.k; renderTabs(); renderRank(); renderDetail(); window.scrollTo({top:0,behavior:"smooth"}); return; } }
+    for(const cat of CATS){ const hit = (S.view.categories[cat]||[]).find(o => o.k===ql || (o.kd||"").toLowerCase()===ql); if(hit){ S.mode="keyword"; S.cat=cat; S.kw=hit.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0,behavior:"smooth"}); return; } }
+    for(const cat of CATS){ const hit = (S.view.stories[cat]||[]).find(o => (o.kw||[]).some(([k]) => k.toLowerCase()===ql) || o.title.toLowerCase().includes(ql)); if(hit){ S.mode="story"; S.cat=cat; S.story=hit.id; S.filterKw=null; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0,behavior:"smooth"}); return; } }
     window.open("https://news.google.com/search?q="+encodeURIComponent(q)+"&hl=ko&gl=KR&ceid=KR:ko", "_blank", "noopener");
   }
   function renderNaver(){
@@ -407,7 +590,7 @@
     let rows;
     if(S.nvMode==="home"){ rows = all.filter(r => r.press===home).sort((a,b)=>a.r-b.r); $("pNaverSub").textContent = `${home} 많이 본 기사 Top ${rows.length}`; }
     else { rows = all.filter(r => r.r===1); $("pNaverSub").textContent = `언론사 ${rows.length}곳 · 각 1위`; }
-    $("pNaver").innerHTML = rows.map(r => `<li><span class="n">${S.nvMode==="home"?r.r:""}</span><span class="k"><a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)}</a></span><span class="m">${S.nvMode==="home"?fmtRel(r.d, v.isLive?null:v.ts):esc(r.press)}</span></li>`).join("") || `<li class="empty">${S.nvMode==="home" ? `${home} 랭킹이 이 시점 데이터에 없습니다.` : "없음"}</li>`;
+    $("pNaver").innerHTML = rows.map(r => `<li><span class="n">${S.nvMode==="home"?r.r:""}</span><span class="k"><a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(r.t)}</a></span><span class="m">${S.nvMode==="home"?fmtRel(r.d, base()):esc(r.press)}</span></li>`).join("") || `<li class="empty">${S.nvMode==="home" ? `${home} 랭킹이 이 시점 데이터에 없습니다.` : "없음"}</li>`;
   }
 
   // ---------- 지역 ----------
@@ -421,7 +604,7 @@
     }).join("");
     $("map").querySelectorAll(".tile[data-code]").forEach(t => t.onclick = () => { S.region = t.dataset.code; renderRegions(); });
     const el = $("regionDetail");
-    if(!S.region){ return; }
+    if(!S.region) return;
     const items = R[S.region]||[];
     el.innerHTML = `<h2>${esc(names[S.region]||S.region)} 급상승 검색어 <span class="sub">구글 트렌드</span></h2>` +
       (items.length ? `<ol class="plist">${items.map(i => `<li><span class="n">${i.r}</span><span class="k link" data-q="${esc(i.k)}">${esc(i.k)}</span><span class="m">${fmtTraffic(i.tr)}</span>${i.nat?`<span class="tag nat">전국</span>`:(i.n<=3?`<span class="tag loc">${i.n===1?"이 지역만":"지역 "+i.n+"곳"}</span>`:`<span class="tag">지역 ${i.n}곳</span>`)}</li>`).join("")}</ol>
@@ -430,7 +613,6 @@
     el.querySelectorAll(".k.link").forEach(x => x.onclick = () => jumpTo(x.dataset.q));
   }
 
-  // ---------- 자동 새로고침 ----------
   setInterval(async () => {
     try { const m = await getJSON("data/manifest.json"); if(m.latest !== (S.manifest||{}).latest){ if(S.view && S.view.isLive) await loadLive(); else { S.manifest = m; fillTimeSelects(); } } } catch(e){}
   }, 60000);

@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS portal_items(snapshot_id INTEGER, source TEXT, rank I
     PRIMARY KEY(snapshot_id, source, rank));
 CREATE TABLE IF NOT EXISTS ranking_news(snapshot_id INTEGER, press TEXT, rank INTEGER, title TEXT, url TEXT, published TEXT,
     PRIMARY KEY(snapshot_id, press, rank));
+CREATE TABLE IF NOT EXISTS stories(snapshot_id INTEGER, story_id TEXT, category TEXT, rank INTEGER, score REAL, label TEXT,
+    rep_title TEXT, rep_url TEXT, rep_press TEXT, n_articles INTEGER, outlets INTEGER, search REAL, sources TEXT, spike REAL,
+    first_seen TEXT, keywords TEXT, PRIMARY KEY(snapshot_id, category, story_id));
+CREATE TABLE IF NOT EXISTS story_articles(snapshot_id INTEGER, story_id TEXT, url TEXT, ranked TEXT, PRIMARY KEY(snapshot_id, story_id, url));
+CREATE TABLE IF NOT EXISTS related(snapshot_id INTEGER, keyword TEXT, data TEXT, PRIMARY KEY(snapshot_id, keyword));
 CREATE TABLE IF NOT EXISTS daily_counts(date TEXT, category TEXT, keyword TEXT, publish_sum INTEGER, n INTEGER,
     PRIMARY KEY(date, category, keyword));
 CREATE TABLE IF NOT EXISTS region_trends(snapshot_id INTEGER, region TEXT, rank INTEGER, keyword TEXT, traffic INTEGER,
@@ -29,7 +34,16 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
+        self._migrate()
         self.conn.executescript(SCHEMA)
+
+    def _migrate(self) -> None:
+        """예전 stories 표(기본키에 category 없음)는 지우고 다시 만든다 — 스토리 이력만 잃고 나머지는 그대로."""
+        row = self.conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='stories'").fetchone()
+        if row and "PRIMARY KEY(snapshot_id, category, story_id)" not in row["sql"]:
+            with self.conn:
+                self.conn.execute("DROP TABLE stories")
+                self.conn.execute("DROP TABLE IF EXISTS story_articles")
 
     # ---- 읽기 ----
     def prev_ranks(self, before_ts: str) -> dict[str, dict[str, int]]:
@@ -58,6 +72,45 @@ class Store:
                 "INSERT INTO daily_counts(date, category, keyword, publish_sum, n) VALUES(?,?,?,?,1) "
                 "ON CONFLICT(date, category, keyword) DO UPDATE SET publish_sum=publish_sum+excluded.publish_sum, n=n+1",
                 [(date, c, k, p) for c, k, p in rows])
+
+    def prev_stories(self, before_ts: str) -> tuple[list[dict], dict[str, dict[str, int]]]:
+        """직전 스냅샷의 스토리(id, urls, label, n, first_seen) + {category: {story_id: rank}}"""
+        row = self.conn.execute("SELECT id FROM snapshots WHERE ts < ? ORDER BY ts DESC LIMIT 1", (before_ts,)).fetchone()
+        if not row:
+            return [], {}
+        urls: dict[str, set[str]] = {}
+        for r in self.conn.execute("SELECT story_id, url FROM story_articles WHERE snapshot_id=?", (row["id"],)):
+            urls.setdefault(r["story_id"], set()).add(r["url"])
+        out, ranks, seen = [], {}, set()
+        for r in self.conn.execute("SELECT * FROM stories WHERE snapshot_id=?", (row["id"],)):
+            ranks.setdefault(r["category"], {})[r["story_id"]] = r["rank"]
+            if r["story_id"] in seen:
+                continue
+            seen.add(r["story_id"])
+            out.append({"id": r["story_id"], "urls": urls.get(r["story_id"], set()), "label": json.loads(r["label"]),
+                        "n": r["n_articles"], "first_seen": r["first_seen"]})
+        return out, ranks
+
+    def stories_for(self, snapshot_id: int, keep_n: int) -> dict[str, list[sqlite3.Row]]:
+        out: dict[str, list] = {}
+        for r in self.conn.execute("SELECT * FROM stories WHERE snapshot_id=? AND rank<=? ORDER BY category, rank", (snapshot_id, keep_n)):
+            out.setdefault(r["category"], []).append(r)
+        return out
+
+    def story_articles_for_day(self, snapshot_ids: list[int], cap: int = 30) -> dict[str, list[dict]]:
+        if not snapshot_ids:
+            return {}
+        q = ",".join("?" * len(snapshot_ids))
+        out: dict[str, dict[str, dict]] = {}
+        for r in self.conn.execute(
+            f"SELECT sa.story_id, sa.ranked, a.url, a.title, a.press, a.published, a.origin FROM story_articles sa "
+            f"JOIN articles a ON a.url=sa.url WHERE sa.snapshot_id IN ({q})", snapshot_ids):
+            out.setdefault(r["story_id"], {})[r["url"]] = {"t": r["title"], "u": r["url"], "p": r["press"], "d": r["published"], "o": r["origin"],
+                                                           "rp": json.loads(r["ranked"]) if r["ranked"] else []}
+        return {k: sorted(v.values(), key=lambda a: (-len(a["rp"]), a["d"]), reverse=False)[:cap] for k, v in out.items()}
+
+    def related_for(self, snapshot_id: int) -> dict[str, list]:
+        return {r["keyword"]: json.loads(r["data"]) for r in self.conn.execute("SELECT keyword, data FROM related WHERE snapshot_id=?", (snapshot_id,))}
 
     def snapshot_dates(self) -> list[str]:
         return [r[0] for r in self.conn.execute("SELECT DISTINCT substr(ts,1,10) FROM snapshots ORDER BY 1")]
@@ -116,7 +169,7 @@ class Store:
         with c:
             cur = c.execute("INSERT OR REPLACE INTO snapshots(ts, meta) VALUES(?,?)", (snap["ts"], json.dumps(snap["meta"], ensure_ascii=False)))
             sid = cur.lastrowid
-            for t in ("ranks", "keyword_articles", "portal_items", "ranking_news", "region_trends"):
+            for t in ("ranks", "keyword_articles", "portal_items", "ranking_news", "region_trends", "stories", "story_articles", "related"):
                 c.execute(f"DELETE FROM {t} WHERE snapshot_id=?", (sid,))
             for cat, rows in snap["categories"].items():
                 c.executemany("INSERT INTO ranks VALUES(?,?,?,?,?,?,?,?,?,?,?)",
@@ -133,6 +186,16 @@ class Store:
                               [(sid, src, it["r"], it["k"], it.get("tr", 0), json.dumps({k: v for k, v in it.items() if k not in ("r", "k", "tr")}, ensure_ascii=False)) for it in items])
             c.executemany("INSERT OR REPLACE INTO ranking_news VALUES(?,?,?,?,?,?)",
                           [(sid, it["press"], it["r"], it["t"], it["u"], it["d"]) for it in snap["portals"].get("naver_ranking", [])])
+            for cat, rows in snap.get("stories", {}).items():
+                c.executemany("INSERT OR REPLACE INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                              [(sid, r["id"], cat, r["r"], r["s"], json.dumps(r["label"], ensure_ascii=False), r["title"], r["url"], r["press"],
+                                r["n"], r["outlets"], r["search"], r["src"], r["spike"], r["first"], json.dumps(r["kw"], ensure_ascii=False)) for r in rows])
+            for stid, arts in snap.get("story_articles", {}).items():
+                for a in arts:
+                    c.execute("INSERT OR IGNORE INTO articles VALUES(?,?,?,?,?,?)", (a["u"], a["t"], a["p"], a["d"], a["o"], snap["ts"]))
+                    c.execute("INSERT OR IGNORE INTO story_articles VALUES(?,?,?,?)", (sid, stid, a["u"], json.dumps(a.get("rp", []), ensure_ascii=False)))
+            c.executemany("INSERT OR REPLACE INTO related VALUES(?,?,?)",
+                          [(sid, kw, json.dumps(rel, ensure_ascii=False)) for kw, rel in snap.get("related", {}).items()])
             for code, items in snap["regions"].items():
                 c.executemany("INSERT OR REPLACE INTO region_trends VALUES(?,?,?,?,?,?,?)",
                               [(sid, code, it["r"], it["k"], it.get("tr", 0), int(it["nat"]), it["n"]) for it in items])
