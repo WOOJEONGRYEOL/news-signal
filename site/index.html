@@ -214,7 +214,7 @@
     <section class="glass panel">
       <h2>키워드 관계망 <span class="sub" id="mapSub"></span></h2>
       <div id="net"></div>
-      <div class="nethelp"><span>점수가 높을수록 크고 가운데에 · 색은 카테고리, 같은 분야는 같은 방향</span><span>글자에 마우스를 올리면 그 말이 가운데로 오고 함께 다뤄진 말들이 읽기 좋은 크기로 둘레에 펼쳐지며, 오른쪽에 관련 기사가 뜹니다. 커서가 벗어나면 제자리로 돌아갑니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
+      <div class="nethelp"><span>점수가 높을수록 크고 가운데에 · 색은 카테고리, 같은 분야는 같은 방향</span><span>글자에 마우스를 올리면 그 말이 가운데로 오고 함께 다뤄진 말들이 읽기 좋은 크기로 둘레에 펼쳐지며, 오른쪽에 관련 기사가 뜹니다. 다른 키워드에 올리면 그쪽으로 옮겨 가고, 커서가 이 영역을 벗어나면 제자리로 돌아갑니다 · 누르면 고정 · 더블클릭하면 키워드 화면으로 · 휠로 확대, 끌어서 이동</span></div>
     </section>
     <section class="glass panel side" id="netSide"></section>
   </div>
@@ -651,7 +651,6 @@
           drawWord(el, gh, gh.cur);
           ghosts.push(gh); items.push({obj:gh.cur, to}); related.push({node:gh, dashed:true, k:st});
           el.onmouseenter = () => clearTimeout(leaveTimer);
-          el.onmouseleave = () => { if(!S.pin) scheduleLeave(); };
           el.onclick = ev => { ev.stopPropagation(); renderNetSide(st, key, disp); };
         }
       });
@@ -664,7 +663,7 @@
     }
     function exitFocus(){
       if(!focus) return;
-      focus = null;
+      focus = null; markChange();
       const items = g.N.map(o => ({obj:o.cur, to:{...o.home}}));
       for(const gh of ghosts) items.push({obj:gh.cur, to:{x:cx, y:cy, fs:12, op:0}});
       nodeEls.forEach(el => el.classList.remove("center","on","pin"));
@@ -675,14 +674,20 @@
       renderNetSide(null);
     }
     function scheduleLeave(){ clearTimeout(leaveTimer); leaveTimer = setTimeout(() => { if(S.pin) return; exitFocus(); }, 280); }
+    // 글자가 커서 밑으로 이동·복귀하면서 생기는 가짜 진입 이벤트는 무시: 마지막 포커스 변경 이후 커서가 실제로 움직였을 때만 인정
+    let lastPointer = {x:-1, y:-1}, changePointer = {x:-9999, y:-9999};
+    const pointerMoved = () => Math.hypot(lastPointer.x-changePointer.x, lastPointer.y-changePointer.y) > 6;
+    const markChange = () => { changePointer = {...lastPointer}; };
     nodeEls.forEach((el, k) => {
-      el.onmouseenter = () => { clearTimeout(leaveTimer); clearTimeout(enterTimer); if(focus===k) return; if(focus && el.classList.contains("on")) return; enterTimer = setTimeout(() => enterFocus(k), 110); };
-      el.onmouseleave = () => { clearTimeout(enterTimer); scheduleLeave(); };
+      el.onmouseenter = ev => { if(ev && ev.clientX!=null) lastPointer = {x:ev.clientX, y:ev.clientY}; clearTimeout(leaveTimer); clearTimeout(enterTimer); if(focus===k) return; if(focus && el.classList.contains("on")) return; if(!pointerMoved()) return; enterTimer = setTimeout(() => { enterFocus(k); markChange(); }, 110); };
+      el.onmouseleave = () => { clearTimeout(enterTimer); };   // 글자를 벗어나도 유지 — 관계망 영역을 벗어날 때만 되돌린다
       el.onclick = ev => { ev.stopPropagation(); clearTimeout(enterTimer); if(focus && focus!==k){ S.pin = k; enterFocus(k); syncHash(); return; } S.pin = (S.pin===k) ? null : k; if(S.pin){ if(focus!==k) enterFocus(k); } syncHash(); nodeEls.forEach((e2,k2) => e2.classList.toggle("pin", k2===S.pin)); };
       el.ondblclick = ev => { ev.stopPropagation(); const hit = findKeyword(k); if(hit){ S.mode="keyword"; S.cat=hit.cat; S.kw=hit.o.k; S.path=[]; renderModes(); renderTabs(); renderMain(); window.scrollTo({top:0, behavior:"smooth"}); } };
     });
-    svg.onclick = () => { S.pin = null; exitFocus(); syncHash(); };
+    svg.onclick = () => { S.pin = null; exitFocus(); markChange(); syncHash(); };
     svg.onmouseleave = () => { if(!S.pin) scheduleLeave(); };
+    svg.onmouseenter = () => { clearTimeout(leaveTimer); };
+    svg.addEventListener("pointermove", ev => { lastPointer = {x:ev.clientX, y:ev.clientY}; }, {passive:true});
     let vb = [0,0,g.W,g.H], drag=null;
     const setVB = () => svg.setAttribute("viewBox", vb.map(x => x.toFixed(1)).join(" "));
     svg.addEventListener("wheel", ev => { ev.preventDefault(); const rect = svg.getBoundingClientRect(); const px = vb[0] + (ev.clientX-rect.left)/rect.width*vb[2], py = vb[1] + (ev.clientY-rect.top)/rect.height*vb[3];
