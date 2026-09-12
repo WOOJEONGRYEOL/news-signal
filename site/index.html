@@ -553,31 +553,21 @@
     const W=1200, H=640, smax = Math.max(1, ...prims.map(p => p.s));
     const N = prims.map(p => ({k:p.k, text:p.kd||p.k, s:p.s, cat:p.cat, type:"p"}));
     const idx = new Map(N.map((n,i)=>[n.k,i]));
-    for(const n of N){ n.fs = 15 + 30*Math.sqrt(n.s/smax); n.w = textW(n.text, n.fs) + 10; n.h = n.fs*1.3; }
+    for(const n of N){ n.fs = 14 + 44*Math.pow(n.s/smax, 0.9); n.w = textW(n.text, n.fs) + 10; n.h = n.fs*1.3; }
     // 클라우드 안 키워드끼리의 연결 (연관어 목록에 서로 있으면)
     const edges = new Map();
     for(const n of N) for(const [st,,c] of (rel[n.k]||[])) if(idx.has(st) && st!==n.k){ const key = n.k<st ? n.k+"|"+st : st+"|"+n.k; edges.set(key, Math.max(edges.get(key)||0, c)); }
     const E = [...edges.entries()].map(([key,w]) => { const [a,b]=key.split("|"); return {a:idx.get(a), b:idx.get(b), w}; });
     const wmax = Math.max(1, ...E.map(e => e.w));
-    // 1) 힘 배치: 같은 카테고리·연관된 말끼리 가깝게
+    // 1) 시작 위치: 점수가 높을수록 가운데 가까이, 카테고리는 방향(각도)으로만 유지
     const catOrder = CATS.filter(c => c!=="전체").concat(["전체"]);
-    N.forEach((n,i) => { const a = (catOrder.indexOf(n.cat) + (i%4)*0.12)/catOrder.length*2*Math.PI; n.x = W/2 + Math.cos(a)*200 + (Math.random()-0.5)*60; n.y = H/2 + Math.sin(a)*130 + (Math.random()-0.5)*60; });
-    const k = Math.sqrt(W*H/Math.max(1,N.length)) * 0.9;
-    let temp = 50;
-    for(let it=0; it<200; it++){
-      const dx = new Float64Array(N.length), dy = new Float64Array(N.length);
-      for(let i=0;i<N.length;i++) for(let j=i+1;j<N.length;j++){
-        let ex = N[i].x-N[j].x, ey = N[i].y-N[j].y; let d = Math.hypot(ex,ey)||0.01; if(d>500) continue;
-        const same = N[i].cat===N[j].cat ? 0.7 : 1.3; const f = (k*k)/d * same / d; dx[i]+=ex*f; dy[i]+=ey*f; dx[j]-=ex*f; dy[j]-=ey*f;
-      }
-      for(const e of E){ let ex = N[e.a].x-N[e.b].x, ey = N[e.a].y-N[e.b].y; const d = Math.hypot(ex,ey)||0.01; const f = (d*d/k) * (0.3+0.8*e.w/wmax) / d; dx[e.a]-=ex*f; dy[e.a]-=ey*f; dx[e.b]+=ex*f; dy[e.b]+=ey*f; }
-      for(let i=0;i<N.length;i++){ const n=N[i]; dx[i] += (W/2-n.x)*0.03; dy[i] += (H/2-n.y)*0.045; const d = Math.hypot(dx[i],dy[i])||0.01; const m = Math.min(d, temp); n.x += dx[i]/d*m; n.y += dy[i]/d*m; }
-      temp = Math.max(1.5, temp*0.975);
-    }
+    const byScore = [...N].sort((a,b) => b.s - a.s);
+    byScore.forEach((n,i) => { const ci = catOrder.indexOf(n.cat); const a = (ci + 0.5)/catOrder.length*2*Math.PI + (Math.random()-0.5)*0.6; const r0 = 6 + i*6;
+      n.x = W/2 + Math.cos(a)*r0*1.6; n.y = H/2 + Math.sin(a)*r0*0.8; });
     // 2) 워드클라우드 배치: 큰 말부터 나선으로 빈자리 찾기 (여유 있게)
     const inside = n => n.x-n.w/2 >= 10 && n.x+n.w/2 <= W-10 && n.y-n.h/2 >= 10 && n.y+n.h/2 <= H-10;
     const placed = [];
-    for(const n of [...N].sort((a,b) => b.fs - a.fs)){
+    for(const n of byScore){
       const x0 = Math.max(n.w/2+10, Math.min(W-n.w/2-10, n.x)), y0 = Math.max(n.h/2+10, Math.min(H-n.h/2-10, n.y));
       let done = false;
       for(let t=0; t<3000 && !done; t++){ const a = 0.3*t, r = 1.7*a; n.x = x0 + Math.cos(a)*r*1.4; n.y = y0 + Math.sin(a)*r*0.8; if(inside(n) && !placed.some(p => collides(n,p))) done = true; }
