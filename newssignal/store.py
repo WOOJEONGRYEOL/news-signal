@@ -177,7 +177,7 @@ class Store:
                                 r["sig"].get("spike", 0), r.get("kd", r["k"])) for r in rows])
             for kw, arts in snap["articles"].items():
                 for a in arts:
-                    c.execute("INSERT OR IGNORE INTO articles VALUES(?,?,?,?,?,?)", (a["u"], a["t"], a["p"], a["d"], a["o"], snap["ts"]))
+                    c.execute("INSERT INTO articles VALUES(?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET title=excluded.title, press=excluded.press, published=excluded.published", (a["u"], a["t"], a["p"], a["d"], a["o"], snap["ts"]))
                     c.execute("INSERT OR IGNORE INTO keyword_articles VALUES(?,?,?)", (sid, kw, a["u"]))
             for src, items in snap["portals"].items():
                 if src == "naver_ranking":
@@ -192,7 +192,7 @@ class Store:
                                 r["n"], r["outlets"], r["search"], r["src"], r["spike"], r["first"], json.dumps(r["kw"], ensure_ascii=False)) for r in rows])
             for stid, arts in snap.get("story_articles", {}).items():
                 for a in arts:
-                    c.execute("INSERT OR IGNORE INTO articles VALUES(?,?,?,?,?,?)", (a["u"], a["t"], a["p"], a["d"], a["o"], snap["ts"]))
+                    c.execute("INSERT INTO articles VALUES(?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET title=excluded.title, press=excluded.press, published=excluded.published", (a["u"], a["t"], a["p"], a["d"], a["o"], snap["ts"]))
                     c.execute("INSERT OR IGNORE INTO story_articles VALUES(?,?,?,?)", (sid, stid, a["u"], json.dumps(a.get("rp", []), ensure_ascii=False)))
             c.executemany("INSERT OR REPLACE INTO related VALUES(?,?,?)",
                           [(sid, kw, json.dumps(rel, ensure_ascii=False)) for kw, rel in snap.get("related", {}).items()])

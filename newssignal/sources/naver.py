@@ -31,7 +31,7 @@ def fetch_ranking(now: datetime) -> list[dict]:
         for a in re.finditer(
             r'<em class="list_ranking_num">(\d+)(?:<span[^>]*>[^<]*</span>)?</em>\s*'
             r'<div class="list_content">\s*<a href="([^"]*)"[^>]*class="list_title[^"]*"[^>]*>(.*?)</a>\s*'
-            r'<span class="list_time\s*">([^<]*)</span>', block, re.S):
+            r'<span class="list_time[^"]*">([^<]*)</span>', block, re.S):
             out.append({
                 "press": press,
                 "rank": int(a.group(1)),
