@@ -300,7 +300,7 @@
       <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 처음 등장 후 3시간 안이거나 직전보다 기사가 늘었는지(<span id="sK"></span>)를 더한 값입니다.</p>
     <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 주요 키워드만 워드클라우드처럼 펼쳐 둔 화면입니다. 글자에 마우스를 올리면 그 말과 함께 다뤄진 연관어들이 주변에 나타나고(클라우드에 없던 말도 포함), 관계된 키워드가 밝아지며 관련 기사가 뜹니다.</p>
     <p><b>변동</b>은 직전 수집 대비 순위 이동, G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다. 가중치는 <code>config.toml</code>에서 바꿀 수 있습니다.</p>
-    <p>수집은 30분마다 한 번입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음. 지도 경계는 Natural Earth 자료(퍼블릭 도메인)를 단순화한 것). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
+    <p>수집은 매시 0분과 30분입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음. 지도 경계는 Natural Earth 자료(퍼블릭 도메인)를 단순화한 것). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
     <p class="foot" id="foot"></p>
   </section>
 </div>
@@ -408,7 +408,7 @@
   function renderAll(){
     $("err").innerHTML = "";
     const v = S.view, live = v.isLive;
-    $("status").innerHTML = `<span class="live ${live?"":"off"}"></span>${live?"실시간":"과거 시점"} · 수집 <b>${fmtTs(v.ts)}</b>` + (live ? ` · 30분마다 수집` : "");
+    $("status").innerHTML = `<span class="live ${live?"":"off"}"></span>${live?"실시간":"과거 시점"} · 수집 <b>${fmtTs(v.ts)}</b>` + (live ? ` · 매시 0분·30분 수집` : "");
     $("nowBtn").classList.toggle("on", live);
     if(!live){ $("daySel").value = v.ts.slice(0,10); fillTimes(v.ts.slice(0,10)); $("timeSel").value = v.ts; }
     const W = v.weights || S.manifest.weights || {}, SW = v.story_weights || S.manifest.story_weights || {};

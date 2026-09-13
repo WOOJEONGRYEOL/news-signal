@@ -1,5 +1,5 @@
 #!/bin/bash
-# launchd(30분마다) → 수집 → site/data 변경분 커밋·푸시(원격이 있을 때만). 로그: logs/collect.log
+# launchd(매시 0분·30분) → 수집 → site/data 변경분 커밋·푸시(원격이 있을 때만). 로그: logs/collect.log
 cd "$(dirname "$0")/.." || exit 1
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 mkdir -p logs

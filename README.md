@@ -1,6 +1,6 @@
 # 뉴스 시그널 (News Signal)
 
-**공유 주소: https://woojeongryeol.github.io/news-signal/** (30분마다 갱신)
+**공유 주소: https://woojeongryeol.github.io/news-signal/** (매시 0분·30분에 갱신)
 
 뉴스룸용 실시간 관심사 보드. 포털 실시간 검색어(구글 트렌드·네이트·줌), 언론 발행량(네이버 섹션·연합뉴스·구글 뉴스 피드), 실제 소비(네이버 언론사별 많이 본 기사)를 한 화면에 모아 **카테고리별 Top 10 키워드**를 보여주고, 키워드를 누르면 **관련 기사 목록**과 **시간대별 흐름**이 나옵니다. 과거 시점도 골라서 볼 수 있습니다.
 
@@ -20,7 +20,7 @@ python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 
 ## 자동 수집과 공유 (2026-09-12 등록 완료)
 
-이 맥에 LaunchAgent `com.woo.newssignal`이 등록되어 **30분마다** `scripts/run_auto.sh`가 돕니다: 수집 → `site/data` 변경분 커밋 → GitHub 푸시 → GitHub Actions(`.github/workflows/pages.yml`)가 `site/`를 Pages에 배포. 로그는 `logs/collect.log`.
+이 맥에 LaunchAgent `com.woo.newssignal`이 등록되어 **매시 0분과 30분에** `scripts/run_auto.sh`가 돕니다: 수집 → `site/data` 변경분 커밋 → GitHub 푸시 → GitHub Actions(`.github/workflows/pages.yml`)가 `site/`를 Pages에 배포. 로그는 `logs/collect.log`.
 
 ```bash
 launchctl list | grep com.woo.newssignal        # 상태 (두 번째 칸이 마지막 종료 코드, 0이면 정상)
@@ -29,7 +29,7 @@ launchctl bootout gui/$(id -u)/com.woo.newssignal   # 해제
 python3 -m newssignal loop --every 30            # LaunchAgent 대신 터미널에서 반복하고 싶을 때
 ```
 
-맥이 잠자거나 로그아웃돼 있으면 그 시간대는 건너뛰고, 깨어나면 한 번 돕니다.
+맥이 잠자거나 로그아웃돼 있으면 그 시간대는 건너뛰고, 깨어나면 밀린 회차를 한 번으로 합쳐 돕니다.
 
 ### 부하와 무료 한도
 
