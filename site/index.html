@@ -114,7 +114,9 @@
   .charthead span{color:var(--muted);font-size:12.5px;margin-right:auto}
   .chart{width:100%;height:190px;display:block}
   .chart .area{fill:url(#grad)} .chart .line{fill:none;stroke:var(--accent);stroke-width:2}
-  .chart .axis{stroke:var(--line)} .chart text{fill:var(--muted);font-size:11px}
+  .chart .axis{stroke:var(--line)}
+  .chart .day{stroke:var(--line);stroke-dasharray:4 4}
+  .chart .daylbl{fill:var(--dim);font-size:10.5px;font-weight:600} .chart text{fill:var(--muted);font-size:11px}
   .chart .peak{fill:var(--accent)} .chart .peaklbl{fill:var(--text);font-weight:700}
   .chart .now{fill:var(--text)}
   .chartnote{color:var(--dim);font-size:12px;margin:2px 0 10px}
@@ -322,7 +324,7 @@
   const $ = id => document.getElementById(id);
   const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
   const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, path:[], filterKw:null,
-              range:"24h", viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
+              rangeH:24, viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
   async function getJSON(path){
     const r = await fetch(path + (path.includes("?")?"&":"?") + "t=" + Date.now(), {cache:"no-store"});
@@ -457,6 +459,9 @@
   }
   const srcHtml = s => `<span class="src">${[...(s||"")].map(c => `<b class="${c}">${c}</b>`).join("")}</span>`;
   const barHtml = (g, title) => `<div class="bar" title="${esc(title)}">${["c","p","s","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("")}</div>`;
+  const RANGES = [24, 48, 72];
+  const rangeSeg = () => `<div class="seg rangeseg">${RANGES.map(h => `<button data-h="${h}" class="${S.rangeH===h?"on":""}">${h}시간</button>`).join("")}</div>`;
+  const bindRange = (el, rerender) => el.querySelectorAll(".rangeseg button").forEach(b => b.onclick = () => { S.rangeH = +b.dataset.h; rerender(); });
   const newsLi = (a, dim) => `<li class="${dim?"dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${(a.rp||[]).length ? `<span class="rp">많이 본 · ${a.rp.length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`;
 
   // ---------- 스토리 ----------
@@ -506,13 +511,12 @@
         <span class="chip"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
-      <div class="charthead"><span>관심도 흐름 (스토리 점수)</span><div class="seg"><button id="r24" class="${S.range==="24h"?"on":""}">24시간</button><button id="r7" class="${S.range==="7d"?"on":""}">7일</button></div></div>
+      <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
       ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}`;
     $("storyChips").querySelectorAll(".chip.k").forEach(c => c.onclick = () => { S.filterKw = c.dataset.k || null; renderStoryDetail(); });
-    $("r24").onclick = () => { S.range="24h"; renderStoryDetail(); };
-    $("r7").onclick = () => { S.range="7d"; renderStoryDetail(); };
+    bindRange(el, renderStoryDetail);
     try { drawChart(await series(o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
   }
 
@@ -570,14 +574,13 @@
       <h2 style="font-size:15px">연관어 <span class="sub">함께 등장한 말 · 누르면 그 조합으로 파고듭니다</span></h2>
       <div class="crumbs" id="crumbs"><b>${esc(o.kd||o.k)}</b>${S.path.map((p,i) => ` › <b>${esc(p.d)}</b>`).join("")}${S.path.length ? ` <button id="crumbReset">처음으로</button>` : ""}</div>
       <div id="ring">${rel.length ? "" : `<div class="chartnote">‘${esc(focusD)}’와 함께 자주 등장한 말이 아직 없습니다.</div>`}</div>
-      <div class="charthead"><span>관심도 흐름 (종합점수)</span><div class="seg"><button id="r24" class="${S.range==="24h"?"on":""}">24시간</button><button id="r7" class="${S.range==="7d"?"on":""}">7일</button></div></div>
+      <div class="charthead"><span>관심도 흐름 (종합점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <h2 style="margin-top:14px">관련 기사 <span class="sub">${filters.length ? `‘${esc(S.path.map(p=>p.d).join(" + "))}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 최신순`}</span></h2>
       ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, filters.length && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 관련 기사가 없습니다.</div>`}`;
     if(rel.length) drawRing(focusD, rel);
     const reset = $("crumbReset"); if(reset) reset.onclick = () => { S.path=[]; renderDetail(); };
-    $("r24").onclick = () => { S.range="24h"; renderDetail(); };
-    $("r7").onclick = () => { S.range="7d"; renderDetail(); };
+    bindRange(el, renderDetail);
     try { drawChart(await series(o.k, S.cat, "keyword"), "키워드"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
   }
   function drawRing(centerLabel, rel){
@@ -807,7 +810,7 @@
   // ---------- 시계열 ----------
   async function series(key, cat, kind){
     const end = S.viewTs ? new Date(S.viewTs) : new Date(S.manifest.latest||Date.now());
-    const hours = S.range==="24h" ? 24 : 24*7;
+    const hours = S.rangeH || 24;
     const start = new Date(end.getTime() - hours*3600*1000);
     const ld = []; for(let d=new Date(start); ; d.setDate(d.getDate()+1)){ ld.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); if(d>=end) break; }
     const endKey = `${end.getFullYear()}-${pad(end.getMonth()+1)}-${pad(end.getDate())}`; if(!ld.includes(endKey)) ld.push(endKey);
@@ -828,19 +831,29 @@
     let peak = pts[0]; for(const p of pts) if(p.s>peak.s) peak=p;
     const line = pts.map((p,i) => (i?"L":"M") + x(p.t).toFixed(1) + " " + y(p.s).toFixed(1)).join(" ");
     const area = line + ` L${x(pts[pts.length-1].t).toFixed(1)} ${y(0)} L${x(pts[0].t).toFixed(1)} ${y(0)} Z`;
-    const ticks = []; const span = end-start, n = S.range==="24h" ? 6 : 7;
-    for(let i=0;i<=n;i++){ const t = new Date(start.getTime() + span*i/n); ticks.push(`<text x="${x(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${S.range==="24h" ? fmtHM(t) : (t.getMonth()+1)+"/"+t.getDate()}</text>`); }
+    // 눈금은 시각(HH시) 기준, 자정에는 날짜 구분선 — 여러 날에 걸쳐도 시간대 흐름이 보이게
+    const stepH = S.rangeH<=24 ? 4 : S.rangeH<=48 ? 6 : 12;
+    const ticks = [], daylines = [];
+    const tk = new Date(start); tk.setMinutes(0,0,0);
+    while(tk < start || tk.getHours() % stepH !== 0) tk.setTime(tk.getTime() + 3600000);
+    for(; tk <= end; tk.setTime(tk.getTime() + stepH*3600000)){
+      const px = x(tk);
+      ticks.push(`<text x="${px.toFixed(1)}" y="${H-8}" text-anchor="middle">${pad(tk.getHours())}시</text>`);
+      if(tk.getHours()===0) daylines.push(`<line class="day" x1="${px.toFixed(1)}" x2="${px.toFixed(1)}" y1="${T-4}" y2="${H-B}"/><text class="daylbl" x="${(px+5).toFixed(1)}" y="${T+5}">${tk.getMonth()+1}/${tk.getDate()}</text>`);
+    }
+    if(S.rangeH > 24) daylines.push(`<text class="daylbl" x="${L+4}" y="${T+5}">${start.getMonth()+1}/${start.getDate()}</text>`);
     const hov = pts.map(p => `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.s).toFixed(1)}" r="6" fill="transparent"><title>${fmtTs(p.ts)} · ${p.s.toFixed(1)}점${p.r?` · ${p.r}위`:" · 순위권 밖"}</title></circle>`).join("");
     const last = pts[pts.length-1];
     $("chart").innerHTML = `<svg class="chart" viewBox="0 0 ${Wd} ${H}" preserveAspectRatio="none">
       <defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a7aff" stop-opacity=".28"/><stop offset="1" stop-color="#0a7aff" stop-opacity=".02"/></linearGradient></defs>
       ${[0,50,100].map(v => `<line class="axis" x1="${L}" x2="${Wd-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join("")}
+      ${daylines.join("")}
       <path class="area" d="${area}"/><path class="line" d="${line}"/>
       <circle class="peak" cx="${x(peak.t).toFixed(1)}" cy="${y(peak.s).toFixed(1)}" r="4"/>
       <text class="peaklbl" x="${Math.min(Wd-R-90, Math.max(L, x(peak.t)-30)).toFixed(1)}" y="${Math.max(12, y(peak.s)-9).toFixed(1)}">최고 ${peak.s.toFixed(1)} · ${fmtTs(peak.ts)}</text>
       <circle class="now" cx="${x(last.t).toFixed(1)}" cy="${y(last.s).toFixed(1)}" r="3"/>
-      ${ticks}${hov}</svg>
-      <div class="chartnote">점은 수집 시각, 0점은 그 시각 ${what} Top ${S.manifest.keep_n||20} 밖. 최고점은 이슈가 가장 뜨거웠던 때입니다.</div>`;
+      ${ticks.join("")}${hov}</svg>
+      <div class="chartnote">점은 수집 시각(매시 0분·30분), 0점은 그 시각 ${what} Top ${S.manifest.keep_n||20} 밖. 점선은 자정. 최고점은 이슈가 가장 뜨거웠던 때입니다.</div>`;
   }
 
   // ---------- 포털 원본 ----------
@@ -948,6 +961,7 @@
     if(h.get("story")) S.story = h.get("story");
     if(h.get("pin")) S.pin = h.get("pin");
     if(h.get("region")) S.region = h.get("region");
+    if(["24","48","72"].includes(h.get("range"))) S.rangeH = +h.get("range");
     if(h.has("noanim")) document.documentElement.classList.add("noanim");
   }
   function syncHash(){
@@ -956,6 +970,7 @@
     if(S.mode==="story" && S.story) p.set("story", S.story);
     if(S.mode==="map" && S.pin) p.set("pin", S.pin);
     if(S.region) p.set("region", S.region);
+    if(S.rangeH !== 24) p.set("range", String(S.rangeH));
     if(location.hash.includes("noanim")) p.set("noanim", "1");
     history.replaceState(null, "", "#" + p.toString());
   }
