@@ -188,6 +188,8 @@
   .tag{font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
   .tag.issue{color:var(--publish);border-color:rgba(34,163,124,.4)}
   ol.plist.subs .k.link{cursor:pointer;white-space:normal}
+  .submore{margin:4px 0 2px;font-size:12.5px;padding:4px 13px;background:var(--glass2);border:1px solid var(--glass-border);box-shadow:none;color:var(--muted)}
+  .submore:hover{color:var(--text)}
   ol.plist.subs li{align-items:flex-start}
   .tag.loc{color:var(--spike);border-color:rgba(240,165,42,.5)} .tag.nat{color:var(--accent);border-color:rgba(10,122,255,.4)}
   .legend{margin-top:16px;color:var(--muted);font-size:13px}
@@ -326,7 +328,7 @@
   ];
   const $ = id => document.getElementById(id);
   const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
-  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, path:[], filterKw:null,
+  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, subsOpen:false, path:[], filterKw:null,
               rangeH:24, viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
   async function getJSON(path){
@@ -440,7 +442,7 @@
       $("rankHead").innerHTML = `<tr><th class="num">#</th><th>대표 기사 · 공통 키워드</th><th>변동</th><th class="colbar">신호</th><th style="text-align:right">점수</th></tr>`;
       renderStoryList();
       const rows = S.view.stories[S.cat]||[];
-      if(S.story && !rows.some(o => o.id===S.story)) S.story = null;
+      if(S.story && !rows.some(o => o.id===S.story)){ S.story = null; S.sub = null; S.subsOpen = false; }
       if(!S.story && rows[0]) S.story = rows[0].id;
       renderStoryDetail();
     } else {
@@ -481,7 +483,7 @@
     $("rankBody").innerHTML = rows.map(o => `<tr class="row ${o.id===S.story?"sel":""}" data-id="${esc(o.id)}"><td class="num">${o.r}</td>
       <td><div class="hl">${esc(o.title)}</div><div class="meta"><span class="lb">${esc(o.ld)}</span><span>· 기사 ${o.n}건 · 언론사 ${o.outlets}곳</span>${(o.subs&&o.subs.length) ? `<span class="tag issue">국면 ${o.subs.length+1}</span>` : ""}${o.src?srcHtml(o.src):""}</div></td>
       <td>${deltaHtml(o.d)}</td><td class="colbar">${barHtml(storySegs(o), `소비 ${o.outlets}곳 · 발행 ${o.n}건 · 검색 ${o.search} · 급상승 ${o.spike}`)}</td><td class="score">${o.s.toFixed(1)}</td></tr>`).join("");
-    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; S.sub = null; renderStoryList(); renderStoryDetail(); });
+    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; S.sub = null; S.subsOpen = false; renderStoryList(); renderStoryDetail(); });
   }
   function storyNarrative(o){
     const p = [];
@@ -525,14 +527,20 @@
         <span class="chip"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
-      ${(o.subs&&o.subs.length) ? `<h2 style="font-size:15px">이 이슈의 다른 국면 <span class="sub">${o.subs.length}건 · 누르면 그 국면의 기사만 봅니다</span></h2>
-      <ol class="plist subs">${o.subs.map(sb => `<li><span class="n"></span><span class="k link" data-sub="${esc(sb.id)}">${esc(sb.title)}<span style="color:var(--muted)"> · ${esc(sb.ld)}</span></span><span class="m">기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></li>`).join("")}</ol>` : ""}
+      ${(o.subs&&o.subs.length) ? (() => {
+        // 국면이 많으면 목록이 길어져 아래 그래프 위치가 분야마다 들쭉날쭉해진다. 기본은 4줄만.
+        const SHOW = 4, more = o.subs.length - SHOW, list = S.subsOpen ? o.subs : o.subs.slice(0, SHOW);
+        return `<h2 style="font-size:15px">이 이슈의 다른 국면 <span class="sub">${o.subs.length}건 · 누르면 그 국면의 기사만 봅니다</span></h2>
+      <ol class="plist subs">${list.map(sb => `<li><span class="n"></span><span class="k link" data-sub="${esc(sb.id)}">${esc(sb.title)}<span style="color:var(--muted)"> · ${esc(sb.ld)}</span></span><span class="m">기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></li>`).join("")}</ol>
+      ${more > 0 ? `<button class="pill submore" id="subMore">${S.subsOpen ? "국면 접기" : `국면 ${more}건 더 보기`}</button>` : ""}`;
+      })() : ""}
       <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
       ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}`;
     $("storyChips").querySelectorAll(".chip.k").forEach(c => c.onclick = () => { S.filterKw = c.dataset.k || null; renderStoryDetail(); });
     el.querySelectorAll("[data-sub]").forEach(x => x.onclick = () => { S.sub = x.dataset.sub; renderStoryDetail(); });
+    const sm = $("subMore"); if(sm) sm.onclick = () => { S.subsOpen = !S.subsOpen; renderStoryDetail(); };
     bindRange(el, renderStoryDetail);
     try { drawChart(await series(o.iid || o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
   }
