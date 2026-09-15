@@ -328,7 +328,7 @@
   ];
   const $ = id => document.getElementById(id);
   const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
-  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, subsOpen:false, path:[], filterKw:null,
+  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, subsOpen:false, catPrev:null, path:[], filterKw:null,
               rangeH:24, viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
   async function getJSON(path){
@@ -426,7 +426,14 @@
     $("foot").textContent = (corpus ? `이번 수집: 기사 ${corpus.toLocaleString()}건 · 스토리 ${m.stories||0}개(이슈 ${m.issues||m.stories||0}묶음) · 네이버 랭킹 ${m.ranking_rows}건 · 지역 ${m.regions}곳 · 급상승 기준 스냅샷 ${m.baseline_snapshots}개` : "") + ` · News Signal v${S.manifest.version||""}`;
   }
   function renderModes(){
-    $("modes").querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.mode===S.mode); b.onclick = () => { S.mode = b.dataset.mode; S.path=[]; S.filterKw=null; renderModes(); renderMain(); }; });
+    $("modes").querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.mode===S.mode); b.onclick = () => {
+      const from = S.mode, to = b.dataset.mode;
+      // 관계망은 분야를 가로질러 보는 화면이라 들어갈 때마다 '전체'로 시작한다. 나올 때는 보던 분야로 되돌린다.
+      if(to==="map" && from!=="map"){ S.catPrev = S.cat; S.cat = "전체"; S.graph = null; S.pin = null; }
+      else if(from==="map" && to!=="map" && S.catPrev){ S.cat = S.catPrev; S.catPrev = null; S.graph = null; }
+      S.mode = to; S.path=[]; S.filterKw=null;
+      renderModes(); renderTabs(); renderMain();
+    }; });
   }
   function renderTabs(){
     $("tabs").innerHTML = CATS.map(c => `<button data-cat="${c}" class="${c===S.cat?"on":""}">${c}</button>`).join("");
