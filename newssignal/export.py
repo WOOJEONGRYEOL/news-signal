@@ -35,7 +35,7 @@ def export_day(cfg: Config, store: Store, date: str) -> None:
         cats = {cat: [[r["keyword"], r["rank"], r["score"], r["search"], r["publish"], r["consume"], r["sources"], r["spike"], r["display"]] for r in rows]
                 for cat, rows in store.ranks_for(s["id"], cfg.keep_n).items()}
         sts = {cat: [[r["story_id"], r["rank"], r["score"], r["label"], r["rep_title"], r["rep_url"], r["rep_press"], r["n_articles"],
-                      r["outlets"], r["search"], r["sources"], r["spike"], r["first_seen"], r["keywords"]] for r in rows]
+                      r["outlets"], r["search"], r["sources"], r["spike"], r["first_seen"], r["keywords"], r["issue"], r["subs"]] for r in rows]
                for cat, rows in store.stories_for(s["id"], cfg.keep_n).items()}
         day["snapshots"].append({"ts": s["ts"], "cats": cats, "stories": sts})
         extras["snapshots"].append({"ts": s["ts"], "portals": store.portal_items(s["id"]), "regions": store.regions(s["id"]),

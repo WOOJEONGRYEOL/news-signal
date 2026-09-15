@@ -186,6 +186,9 @@
   .rtitle h2{font-size:20px;margin:0}
   .rnum{font-size:13px;color:var(--muted)}
   .tag{font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .tag.issue{color:var(--publish);border-color:rgba(34,163,124,.4)}
+  ol.plist.subs .k.link{cursor:pointer;white-space:normal}
+  ol.plist.subs li{align-items:flex-start}
   .tag.loc{color:var(--spike);border-color:rgba(240,165,42,.5)} .tag.nat{color:var(--accent);border-color:rgba(10,122,255,.4)}
   .legend{margin-top:16px;color:var(--muted);font-size:13px}
   .legend p{margin:6px 0}
@@ -295,7 +298,7 @@
 
   <section class="glass panel legend">
     <h2>읽는 법</h2>
-    <p><b>스토리</b>는 같은 사건을 다룬 기사 묶음입니다. 제목은 묶음을 대표하는 기사 한 줄이고, 그 아래 작은 글씨가 묶음의 공통 키워드입니다. 스토리 점수는
+    <p><b>스토리</b>는 같은 사건을 다룬 기사 묶음입니다. 한 사건이 커지면 국면마다(고성·해명·반응) 따로 묶이는데, 같은 앵커 키워드를 공유하면 하나의 <b>이슈</b>로 접어 순위에 한 줄만 올립니다. ‘국면 7’ 표시가 그것이고, 상세에서 다른 국면을 눌러 볼 수 있습니다. 제목은 묶음을 대표하는 기사 한 줄이고, 그 아래 작은 글씨가 묶음의 공통 키워드입니다. 스토리 점수는
       <i class="sw" style="background:var(--consume)"></i><b>소비</b> 네이버 언론사별 ‘많이 본 기사’에 이 사건 기사를 올린 언론사 수(<span id="sC"></span>)
       <i class="sw" style="background:var(--publish)"></i><b>발행</b> 묶인 기사 수(<span id="sP"></span>)
       <i class="sw" style="background:var(--search)"></i><b>검색</b> 구글 트렌드·네이트·줌 실시간 검색어와 맞물리는지(<span id="sS"></span>)
@@ -323,7 +326,7 @@
   ];
   const $ = id => document.getElementById(id);
   const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
-  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, path:[], filterKw:null,
+  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, path:[], filterKw:null,
               rangeH:24, viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
   async function getJSON(path){
@@ -367,9 +370,9 @@
       for(const o of rows) o.d = prev ? (o.k in pr ? pr[o.k]-o.r : "new") : null;
       categories[cat] = rows;
       const srows = ((snap.stories||{})[cat]||[]).map(a => { const label = safeJSON(a[3], []), kw = safeJSON(a[13], []);
-        return {id:a[0], r:a[1], s:a[2], label, ld:label.join(" · "), title:a[4], url:a[5], press:a[6], n:a[7], outlets:a[8], search:a[9], src:a[10]||"", spike:a[11]||0, first:a[12], kw, cat}; });
-      const ps = {}; if(prev) for(const a of ((prev.stories||{})[cat]||[])) ps[a[0]]=a[1];
-      for(const o of srows) o.d = prev ? (o.id in ps ? ps[o.id]-o.r : "new") : null;
+        return {id:a[0], r:a[1], s:a[2], label, ld:label.join(" · "), title:a[4], url:a[5], press:a[6], n:a[7], outlets:a[8], search:a[9], src:a[10]||"", spike:a[11]||0, first:a[12], kw, cat, iid:a[14]||a[0], subs:safeJSON(a[15], [])}; });
+      const ps = {}; if(prev) for(const a of ((prev.stories||{})[cat]||[])) ps[a[14]||a[0]]=a[1];
+      for(const o of srows) o.d = prev ? ((o.iid in ps) ? ps[o.iid]-o.r : "new") : null;
       stories[cat] = srows;
     }
     const ex = (extra.snapshots||[]).find(s => s.ts===ts) || {portals:{}, regions:{}, naver_ranking:[], related:{}};
@@ -418,7 +421,7 @@
     $("sC").textContent = pct(SW.consume); $("sP").textContent = pct(SW.publish); $("sS").textContent = pct(SW.search); $("sK").textContent = pct(SW.spike);
     renderModes(); renderTabs(); renderMain(); renderPortals(); renderRegions();
     const m = v.meta||{}; const corpus = m.corpus ? Object.values(m.corpus).reduce((a,b)=>a+b,0) : null;
-    $("foot").textContent = (corpus ? `이번 수집: 기사 ${corpus.toLocaleString()}건 · 스토리 ${m.stories||0}개 · 네이버 랭킹 ${m.ranking_rows}건 · 지역 ${m.regions}곳 · 급상승 기준 스냅샷 ${m.baseline_snapshots}개` : "") + ` · News Signal v${S.manifest.version||""}`;
+    $("foot").textContent = (corpus ? `이번 수집: 기사 ${corpus.toLocaleString()}건 · 스토리 ${m.stories||0}개(이슈 ${m.issues||m.stories||0}묶음) · 네이버 랭킹 ${m.ranking_rows}건 · 지역 ${m.regions}곳 · 급상승 기준 스냅샷 ${m.baseline_snapshots}개` : "") + ` · News Signal v${S.manifest.version||""}`;
   }
   function renderModes(){
     $("modes").querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.mode===S.mode); b.onclick = () => { S.mode = b.dataset.mode; S.path=[]; S.filterKw=null; renderModes(); renderMain(); }; });
@@ -476,13 +479,14 @@
     const sub = $("rankSub"); if(sub) sub.textContent = `${S.cat} · ${fmtTs(v.ts)} 기준`;
     if(!rows.length){ $("rankBody").innerHTML = `<tr><td colspan="5" class="empty">이 시점에는 스토리가 없습니다.</td></tr>`; return; }
     $("rankBody").innerHTML = rows.map(o => `<tr class="row ${o.id===S.story?"sel":""}" data-id="${esc(o.id)}"><td class="num">${o.r}</td>
-      <td><div class="hl">${esc(o.title)}</div><div class="meta"><span class="lb">${esc(o.ld)}</span><span>· 기사 ${o.n}건 · 언론사 ${o.outlets}곳</span>${o.src?srcHtml(o.src):""}</div></td>
+      <td><div class="hl">${esc(o.title)}</div><div class="meta"><span class="lb">${esc(o.ld)}</span><span>· 기사 ${o.n}건 · 언론사 ${o.outlets}곳</span>${(o.subs&&o.subs.length) ? `<span class="tag issue">국면 ${o.subs.length+1}</span>` : ""}${o.src?srcHtml(o.src):""}</div></td>
       <td>${deltaHtml(o.d)}</td><td class="colbar">${barHtml(storySegs(o), `소비 ${o.outlets}곳 · 발행 ${o.n}건 · 검색 ${o.search} · 급상승 ${o.spike}`)}</td><td class="score">${o.s.toFixed(1)}</td></tr>`).join("");
-    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; renderStoryList(); renderStoryDetail(); });
+    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; S.sub = null; renderStoryList(); renderStoryDetail(); });
   }
   function storyNarrative(o){
     const p = [];
     p.push(`이 사건은 지금 기사 ${o.n}건으로 다뤄지고 있습니다.`);
+    if(o.subs && o.subs.length) p.push(`고성·해명처럼 ${o.subs.length+1}개 국면으로 나뉘어 보도되고 있어, 순위에는 한 줄로 묶어 올렸습니다.`);
     if(o.outlets>=5) p.push(`언론사 ${o.outlets}곳의 ‘많이 본 기사’에 올라 있어, 수용자가 실제로 가장 많이 읽는 뉴스에 속합니다.`);
     else if(o.outlets>0) p.push(`언론사 ${o.outlets}곳의 ‘많이 본 기사’에도 올라 실제로 읽히고 있습니다.`);
     else p.push(`아직 ‘많이 본 기사’에는 오르지 않았습니다. 발행은 되지만 소비는 확인되지 않은 단계입니다.`);
@@ -493,9 +497,19 @@
     else if(typeof o.d==="number" && o.d<0) p.push(`직전 수집보다 ${-o.d}계단 내려왔습니다.`);
     return p.join(" ");
   }
+  function renderSubDetail(parent, sb){
+    const v = S.view, el = $("detail"), arts = (v.story_articles||{})[sb.id]||[];
+    el.innerHTML = `<div class="crumbs"><button id="subBack">← 이슈 전체로</button><span>${esc(parent.title.length>34 ? parent.title.slice(0,34)+"…" : parent.title)}</span></div>
+      <h2><a href="${esc(sb.url||"#")}" target="_blank" rel="noopener">${esc(sb.title)}</a> <span class="sub">${esc(sb.ld)} · 기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></h2>
+      <p class="narr" style="color:var(--muted)">이 이슈 안의 한 국면입니다. 순위에는 이슈 전체로 한 번만 반영됩니다.</p>
+      <h2 style="font-size:15px">이 국면의 기사 <span class="sub">${arts.length}건</span></h2>
+      ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, false)).join("")}</ul>` : `<div class="empty">저장된 기사가 없습니다.</div>`}`;
+    $("subBack").onclick = () => { S.sub = null; renderStoryDetail(); };
+  }
   async function renderStoryDetail(){
     const v = S.view, o = (v.stories[S.cat]||[]).find(x => x.id===S.story), el = $("detail");
     if(!o){ el.innerHTML = `<div class="empty">왼쪽 목록에서 스토리를 누르면 흐름과 묶인 기사가 나옵니다.</div>`; return; }
+    if(S.sub){ const sb = (o.subs||[]).find(x => x.id===S.sub); if(sb) return renderSubDetail(o, sb); S.sub = null; }
     const arts = (v.story_articles||{})[o.id]||[];
     const fk = S.filterKw;
     const shown = fk ? arts.filter(a => a.t.toLowerCase().includes(fk.toLowerCase())) : arts;
@@ -511,13 +525,16 @@
         <span class="chip"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
+      ${(o.subs&&o.subs.length) ? `<h2 style="font-size:15px">이 이슈의 다른 국면 <span class="sub">${o.subs.length}건 · 누르면 그 국면의 기사만 봅니다</span></h2>
+      <ol class="plist subs">${o.subs.map(sb => `<li><span class="n"></span><span class="k link" data-sub="${esc(sb.id)}">${esc(sb.title)}<span style="color:var(--muted)"> · ${esc(sb.ld)}</span></span><span class="m">기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></li>`).join("")}</ol>` : ""}
       <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
       ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}`;
     $("storyChips").querySelectorAll(".chip.k").forEach(c => c.onclick = () => { S.filterKw = c.dataset.k || null; renderStoryDetail(); });
+    el.querySelectorAll("[data-sub]").forEach(x => x.onclick = () => { S.sub = x.dataset.sub; renderStoryDetail(); });
     bindRange(el, renderStoryDetail);
-    try { drawChart(await series(o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
+    try { drawChart(await series(o.iid || o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
   }
 
   // ---------- 키워드 ----------
@@ -818,7 +835,7 @@
     const pts = [];
     for(const f of files) for(const s of f.snapshots){
       const t = new Date(s.ts); if(t<start || t>end) continue;
-      const row = kind==="story" ? ((s.stories||{})[cat]||[]).find(a => a[0]===key) : (s.cats[cat]||[]).find(a => a[0]===key);
+      const row = kind==="story" ? ((s.stories||{})[cat]||[]).find(a => (a[14]||a[0])===key) : (s.cats[cat]||[]).find(a => a[0]===key);
       pts.push({ts:s.ts, t, s: row?row[2]:0, r: row?row[1]:null});
     }
     pts.sort((a,b)=>a.t-b.t);

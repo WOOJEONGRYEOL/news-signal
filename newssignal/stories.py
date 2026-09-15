@@ -8,13 +8,19 @@ from __future__ import annotations
 
 import hashlib
 import math
-from collections import Counter
+import os
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
 MIN_ARTICLES = 2      # 이만큼 못 모으면 스토리로 안 침
 SIM_TH = 0.30         # 묶음에 넣는 최소 유사도
 MERGE_TH = 0.55       # 묶음끼리 합치는 유사도
 MAX_DF_RATIO = 0.12   # 전체 기사의 이 비율보다 많이 나오는 말은 묶는 근거로 안 씀(AI, 대통령 …)
+ANCHOR_COVER = 0.5    # 이슈 앵커는 그 스토리 기사의 절반 이상에 나오는 말이어야 한다
+ANCHOR_MAX_DF = 0.25  # 말뭉치의 4분의 1을 넘게 덮는 말은 앵커로 쓰지 않는다. 그보다 흔한 말은 아래 응집도 검사가 막는다.
+                      # (5%로 조였더니 큰 사건의 주인공 이름이 스스로 상한을 넘어 후보에서 빠지고, 곁다리 이름이 묶음을 가져갔다)
+ISSUE_COHESION = 0.045  # 앵커를 뺀 나머지 어휘의 평균 유사도 기준(6국면 기준). 낮으면 이름만 스칠 뿐 다른 사건으로 본다
+COHESION_PIVOT = 6      # 국면이 많을수록 쌍별 평균은 자연히 낮아지므로 기준도 같은 비율로 낮춘다
 
 
 @dataclass
@@ -37,6 +43,10 @@ class Story:
     prev_n: int | None = None
     spike: float = 0.0
     score: float = 0.0
+    counts: Counter = field(default_factory=Counter)   # 줄기 → 구성원 기사 수
+    presses: set = field(default_factory=set)          # 많이 본 기사에 올린 언론사
+    size: int = 0                                      # 구성원 제목 수
+    issue: str = ""                                    # 같은 사건 묶음(앵커 키워드)
 
 
 def _cos(a: dict, b: dict) -> float:
@@ -144,6 +154,8 @@ def build_stories(everything, kws_by_title, ex, ranked_by_url, terms, term_kw, g
         st.label_display = " · ".join(ex.display(k) for k in label)
         st.vocab = {k for k, c in cnt.items() if c >= 2} | set(label)
         st.keywords = [(ex.display(k), c) for k, c in cnt.most_common(30) if c >= 2 and " " not in k][:8]
+        st.counts = cnt
+        st.size = len(g)
         # 대표 기사: 중심에 가깝고, 많이 본 기사면 우선, 너무 긴 제목은 뒤로
         cent = Counter()
         for i in g:
@@ -157,6 +169,7 @@ def build_stories(everything, kws_by_title, ex, ranked_by_url, terms, term_kw, g
         for u in st.urls:
             presses.update(ranked_by_url.get(u, ()))
         st.outlets = len(presses)
+        st.presses = presses
         st.ranked = sum(1 for u in st.urls if ranked_by_url.get(u))
         cats: Counter[str] = Counter()
         for i in g:
@@ -218,6 +231,105 @@ def build_stories(everything, kws_by_title, ex, ranked_by_url, terms, term_kw, g
                                 + W["search"] * min(1.0, st.search / 2.5) + W["spike"] * st.spike), 1)
     stories.sort(key=lambda s: (-s.score, -s.outlets, -s.n_articles))
     return stories
+
+
+def group_issues(stories: list[Story], df: Counter, n_docs: int, prev_anchors: set[str] | None = None) -> None:
+    """같은 사건의 여러 국면을 하나의 '이슈'로 묶는다 — 앵커 키워드가 같고, 서로 응집돼 있으면 같은 이슈.
+
+    사건이 커지면 국면마다 어휘가 달라(고성·눈물·해명·송구…) 군집이 쪼개지고, 그 국면들이 각자
+    순위를 차지해 화면을 덮는다. 그래서 스토리 위에 한 단계를 더 둔다. 다만 쌍으로 이으면
+    A-B, B-C → A-C 식으로 무관한 사건까지 엉키므로, '같은 앵커'라는 동치 관계로만 묶는다.
+
+    앵커는 그 스토리 기사의 절반 이상에 나오는 말이다(말뭉치의 25%를 넘게 덮는 말은 제외).
+    여기에 응집도 검사를 더한다: 앵커를 빼고 남은 어휘의 평균 유사도가 낮으면(트럼프의 LNG·연준·
+    결혼식처럼 이름만 같이 나올 뿐인 경우) 그 앵커는 버리고 다른 앵커로 다시 시도한다.
+
+    앵커가 스냅샷마다 바뀌면(김승원↔한동훈) 순위 변동과 흐름 곡선이 끊기므로, 고를 때
+    ① 묶이는 국면 수 ② 직전 수집에서 쓰던 앵커인지 ③ 구성원 안에서의 등장 비율 순으로 본다.
+    """
+    idf = {k: math.log(max(2, n_docs) / max(1, d)) for k, d in df.items()}
+    cap = max(3.0, n_docs * ANCHOR_MAX_DF)
+    cores: list[set[str]] = []
+    vecs: list[dict] = []
+    for st in stories:
+        need = max(2, st.size * ANCHOR_COVER)
+        cores.append({k for k, c in st.counts.items() if " " not in k and c >= need and df.get(k, 0) <= cap})
+        vecs.append({k: c / max(1, st.size) * idf.get(k, 1.0) for k, c in st.counts.items() if " " not in k})
+
+    def cohesion(members: set[int], key: str) -> float:
+        vs = [{k: v for k, v in vecs[i].items() if k != key} for i in members]
+        pairs = [_cos(a, b) for i, a in enumerate(vs) for b in vs[i + 1:]]
+        return sum(pairs) / len(pairs) if pairs else 0.0
+
+    if os.environ.get("NEWSSIGNAL_DEBUG_ISSUES"):
+        allc: dict[str, list[int]] = defaultdict(list)
+        for i, cs in enumerate(cores):
+            for k in cs:
+                allc[k].append(i)
+        rows = [(sum(stories[i].counts[k] / max(1, stories[i].size) for i in ms), k, ms) for k, ms in allc.items() if len(ms) >= 2]
+        rows.sort(reverse=True)
+        print("  [후보 앵커 무게 상위]")
+        for mass, k, ms in rows[:10]:
+            vs = [{x: v for x, v in vecs[i].items() if x != k} for i in ms]
+            pr = [_cos(a, b) for i2, a in enumerate(vs) for b in vs[i2+1:]]
+            coh = sum(pr) / len(pr) if pr else 0
+            print(f"    {k:<10s} 무게 {mass:5.1f} · 국면 {len(ms):3d} · 응집 {coh:.3f} · 기준 {ISSUE_COHESION*min(1.0, COHESION_PIVOT/len(ms)):.3f}")
+    rest = set(range(len(stories)))
+    banned: set[str] = set()
+    while rest:
+        cover: dict[str, set[int]] = defaultdict(set)
+        for i in rest:
+            for k in cores[i]:
+                if k not in banned:
+                    cover[k].add(i)
+        cand = {k: v for k, v in cover.items() if len(v) >= 2}
+        if not cand:
+            break
+        def rank_key(kv):
+            # 국면 수만 보면 '한동훈'처럼 곁다리로 자주 나오는 이름이 주인공('김승원')을 밀어내고
+            # 묶음을 가져가 매 수집마다 결과가 뒤집힌다. 그래서 등장 비율을 더한 값(무게)으로 고른다.
+            k, ms = kv
+            mass = sum(stories[i].counts[k] / max(1, stories[i].size) for i in ms)
+            if prev_anchors and k in prev_anchors:
+                mass *= 1.1
+            return (round(mass, 3), max(stories[i].score for i in ms))
+        key, members = max(cand.items(), key=rank_key)
+        th = ISSUE_COHESION * min(1.0, COHESION_PIVOT / len(members))
+        if prev_anchors and key in prev_anchors:
+            th *= 0.7                # 직전에 쓰던 앵커는 조금 더 너그럽게 — 매 수집마다 묶였다 풀렸다 하지 않도록
+        if cohesion(members, key) < th:
+            banned.add(key)          # 이름만 스칠 뿐 서로 다른 사건 — 다른 앵커로 다시 시도
+            continue
+        for i in members:
+            stories[i].issue = key
+        rest -= members
+    for i in rest:
+        stories[i].issue = "s:" + stories[i].id
+    if os.environ.get("NEWSSIGNAL_DEBUG_ISSUES"):
+        _debug_issues(stories, df, n_docs)
+
+
+def _debug_issues(stories: list[Story], df: Counter, n_docs: int) -> None:
+    idf = {k: math.log(max(2, n_docs) / max(1, d)) for k, d in df.items()}
+    def vec(m: Story) -> dict:
+        return {k: c / max(1, m.size) * idf.get(k, 1.0) for k, c in m.counts.items() if " " not in k}
+    groups: dict[str, list[Story]] = defaultdict(list)
+    for st in stories:
+        if not st.issue.startswith("s:"):
+            groups[st.issue].append(st)
+    for key, mem in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        loose: Counter[str] = Counter()
+        for m in mem:
+            for k, c in m.counts.items():
+                if " " not in k and k != key and c >= 2:
+                    loose[k] += 1
+        top = loose.most_common(4)
+        cover = (top[0][1] / len(mem)) if top else 0.0
+        vs = [vec(m) for m in mem]
+        pairs = [_cos({k: v for k, v in a.items() if k != key}, {k: v for k, v in b.items() if k != key})
+                 for i, a in enumerate(vs) for b in vs[i+1:]]
+        mean_cos = sum(pairs) / len(pairs) if pairs else 0.0
+        print(f"  [{key}] 국면{len(mem):3d} · 느슨공통 {cover:4.0%} · 평균유사도 {mean_cos:.3f} · {top}")
 
 
 def related_keywords(everything, focus: list[str], stop: set[str], top: int = 10) -> dict[str, list[tuple[str, int]]]:

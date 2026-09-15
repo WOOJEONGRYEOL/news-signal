@@ -6,7 +6,7 @@ import re
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
 
-from ..fetch import get
+from ..fetch import clean_xml, get
 from ..timeutil import from_rfc822
 
 
@@ -28,7 +28,7 @@ def search_news(query: str, limit: int = 10) -> list[dict]:
 
 
 def _parse(xml: str, limit: int) -> list[dict]:
-    root = ET.fromstring(xml)
+    root = ET.fromstring(clean_xml(xml))
     out: list[dict] = []
     for item in root.iter("item"):
         title = html.unescape(item.findtext("title") or "").strip()

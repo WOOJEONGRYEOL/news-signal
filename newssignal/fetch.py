@@ -13,6 +13,15 @@ UA_MOBILE = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit
              "(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1")
 
 
+CTRL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+BARE_AMP = re.compile(r"&(?!#?\w{1,8};)")
+
+
+def clean_xml(text: str) -> str:
+    """RSS에 가끔 섞이는 제어문자와 홑 & 를 정리한다 (연합뉴스 피드가 종종 깨져 들어온다)."""
+    return BARE_AMP.sub("&amp;", CTRL.sub("", text)).lstrip("\ufeff \t\r\n")
+
+
 class FetchError(RuntimeError):
     pass
 

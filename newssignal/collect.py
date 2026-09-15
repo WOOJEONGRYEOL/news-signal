@@ -13,7 +13,7 @@ from .keywords import CLAUSE_MARK, Extractor, load_stopwords, query_tokens, stem
 from .sources import google_news, google_trends, nate, naver, yna, zum
 from .sources.google_trends import REGIONS
 from .store import Store
-from .stories import build_stories, related_keywords
+from .stories import build_stories, group_issues, related_keywords
 
 CATEGORIES = ["전체", "정치", "경제", "사회", "생활/문화", "세계", "IT/과학", "스포츠", "연예"]
 SOURCE_LABEL = {"google": "G", "nate": "N", "zum": "Z"}
@@ -283,21 +283,17 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
             articles[kw] = sorted(articles[kw], key=lambda a: a["d"], reverse=True)[:15]
             time.sleep(0.4)
 
-    # ---------- 4b. 스토리(기사 묶음) ----------
+    # ---------- 4b. 스토리(기사 묶음) → 이슈(같은 사건) ----------
     gt_news_urls = {ti: {n["url"] for n in t.news} for ti, t in enumerate(terms) if t.news}
     prev_stories, prev_story_ranks = store.prev_stories(ts)
     story_objs = build_stories(everything, kws_by_title, ex, ranked_by_url, terms, term_kw, gt_news_urls, prev_stories, ts, cfg.story_weights)
-    stories: dict[str, list[dict]] = {c: [] for c in CATEGORIES}
+    df_all: Counter[str] = Counter(k for s in kws_by_title for k in s)
+
+    prev_anchors = {k for cat in prev_story_ranks.values() for k in cat if not k.startswith("s:")}
+    group_issues(story_objs, df_all, len(everything), prev_anchors)
+
     story_articles: dict[str, list[dict]] = {}
     for st in story_objs:
-        rep = everything[st.rep]
-        row = {"id": st.id, "s": st.score, "label": st.label, "ld": st.label_display, "title": rep.title, "url": rep.url, "press": rep.press,
-               "n": st.n_articles, "outlets": st.outlets, "ranked": st.ranked, "search": round(st.search, 2),
-               "src": "".join(SOURCE_LABEL[x] for x in sorted(st.sources)), "spike": round(st.spike, 2), "first": st.first_seen,
-               "kw": st.keywords, "cat": st.category}
-        for cat in dict.fromkeys(("전체", st.category)):
-            if cat in stories and len(stories[cat]) < cfg.keep_n:
-                stories[cat].append(dict(row))
         seen_u: set[str] = set()
         arts: list[dict] = []
         for i in st.ids:
@@ -308,14 +304,65 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
             d = a.out()
             d["rp"] = ranked_by_url.get(a.url, [])
             arts.append(d)
-        arts.sort(key=lambda a: (-len(a["rp"]), a["d"]), reverse=False)
         arts.sort(key=lambda a: -len(a["rp"]))
         story_articles[st.id] = arts[:30]
+
+    # 같은 이슈의 국면들을 한 줄로 접는다. 지표는 합집합으로 합산해 큰 사건이 제대로 1위가 되게.
+    W2 = cfg.story_weights
+    groups: dict[str, list] = {}
+    for st in story_objs:
+        groups.setdefault(st.issue, []).append(st)
+    issues: list[dict] = []
+    for iid, mem in groups.items():
+        mem.sort(key=lambda s: (-s.score, -s.outlets, -s.n_articles))
+        urls: set[str] = set()
+        presses: set[str] = set()
+        srcs: set[str] = set()
+        for m in mem:
+            urls |= m.urls
+            presses |= m.presses
+            srcs |= m.sources
+        issues.append({"iid": iid, "mem": mem, "n": len(urls), "outlets": len(presses), "srcs": srcs,
+                       "search": max(m.search for m in mem), "spike": max(m.spike for m in mem),
+                       "first": min((m.first_seen for m in mem if m.first_seen), default=ts)})
+    n_max = max((it["n"] for it in issues), default=1) or 1
+    o_max = max((it["outlets"] for it in issues), default=1) or 1
+    for it in issues:
+        it["s"] = round(100 * (W2["consume"] * it["outlets"] / o_max + W2["publish"] * it["n"] / n_max
+                               + W2["search"] * min(1.0, it["search"] / 2.5) + W2["spike"] * it["spike"]), 1)
+    issues.sort(key=lambda it: (-it["s"], -it["outlets"], -it["n"]))
+
+    stories: dict[str, list[dict]] = {c: [] for c in CATEGORIES}
+    for it in issues:
+        mem = it["mem"]
+        lead = mem[0]
+        rep = everything[lead.rep]
+        subs = [{"id": m.id, "title": everything[m.rep].title, "url": everything[m.rep].url, "press": everything[m.rep].press,
+                 "n": m.n_articles, "outlets": m.outlets, "ld": m.label_display} for m in mem[1:]]
+        row = {"id": lead.id, "iid": it["iid"], "s": it["s"], "label": lead.label, "ld": lead.label_display,
+               "title": rep.title, "url": rep.url, "press": rep.press, "n": it["n"], "outlets": it["outlets"],
+               "ranked": sum(m.ranked for m in mem), "search": round(it["search"], 2),
+               "src": "".join(SOURCE_LABEL[x] for x in sorted(it["srcs"])), "spike": round(it["spike"], 2),
+               "first": it["first"], "kw": lead.keywords, "cat": lead.category, "subs": subs}
+        for cat in dict.fromkeys(("전체", lead.category)):
+            if cat in stories and len(stories[cat]) < cfg.keep_n:
+                stories[cat].append(dict(row))
+        if subs:   # 이슈 대표 줄의 기사 목록은 구성원 전체의 합집합
+            merged: list[dict] = []
+            seen: set[str] = set()
+            for m in mem:
+                for a in story_articles.get(m.id, []):
+                    if a["u"] in seen:
+                        continue
+                    seen.add(a["u"])
+                    merged.append(a)
+            merged.sort(key=lambda a: -len(a["rp"]))
+            story_articles[lead.id] = merged[:40]
     for cat, rows in stories.items():
         pr = prev_story_ranks.get(cat, {})
         for i, row in enumerate(rows, 1):
             row["r"] = i
-            row["d"] = "new" if row["id"] not in pr else pr[row["id"]] - i
+            row["d"] = "new" if row["iid"] not in pr else pr[row["iid"]] - i
     focus = sorted({o["k"] for rows in categories.values() for o in rows})
     related = {kw: rel for kw, rel in related_keywords(everything, focus, stop).items() if rel}
     hop2 = sorted({k for rel in related.values() for k, _ in rel} - set(focus))
@@ -338,7 +385,7 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
         "naver_ranking": [{"press": r["press"], "r": r["rank"], "t": r["title"], "u": r["url"], "d": r["published"]} for r in ranking],
     }
     meta = {"corpus": {c: len(a) for c, a in corpus.items()}, "ranking_rows": len(ranking), "terms": len(terms),
-            "regions": len(gt_regions), "baseline_snapshots": n_base, "stories": len(story_objs),
+            "regions": len(gt_regions), "baseline_snapshots": n_base, "stories": len(story_objs), "issues": len(issues),
             "failures": [l for l in log if l.startswith("FAIL")]}
     snap = {"ts": ts, "meta": meta, "categories": categories, "articles": articles, "stories": stories,
             "story_articles": story_articles, "related": related_display, "related_more": related_more_display, "portals": portals,

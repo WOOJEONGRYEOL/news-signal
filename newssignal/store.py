@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS ranking_news(snapshot_id INTEGER, press TEXT, rank IN
     PRIMARY KEY(snapshot_id, press, rank));
 CREATE TABLE IF NOT EXISTS stories(snapshot_id INTEGER, story_id TEXT, category TEXT, rank INTEGER, score REAL, label TEXT,
     rep_title TEXT, rep_url TEXT, rep_press TEXT, n_articles INTEGER, outlets INTEGER, search REAL, sources TEXT, spike REAL,
-    first_seen TEXT, keywords TEXT, PRIMARY KEY(snapshot_id, category, story_id));
+    first_seen TEXT, keywords TEXT, issue TEXT DEFAULT '', subs TEXT DEFAULT '', PRIMARY KEY(snapshot_id, category, story_id));
 CREATE TABLE IF NOT EXISTS story_articles(snapshot_id INTEGER, story_id TEXT, url TEXT, ranked TEXT, PRIMARY KEY(snapshot_id, story_id, url));
 CREATE TABLE IF NOT EXISTS related(snapshot_id INTEGER, keyword TEXT, data TEXT, PRIMARY KEY(snapshot_id, keyword));
 CREATE TABLE IF NOT EXISTS daily_counts(date TEXT, category TEXT, keyword TEXT, publish_sum INTEGER, n INTEGER,
@@ -44,6 +44,10 @@ class Store:
             with self.conn:
                 self.conn.execute("DROP TABLE stories")
                 self.conn.execute("DROP TABLE IF EXISTS story_articles")
+        elif row and "issue TEXT" not in row["sql"]:
+            with self.conn:   # 이슈 묶음 열만 추가 — 쌓인 이력은 그대로 둔다
+                self.conn.execute("ALTER TABLE stories ADD COLUMN issue TEXT DEFAULT ''")
+                self.conn.execute("ALTER TABLE stories ADD COLUMN subs TEXT DEFAULT ''")
 
     # ---- 읽기 ----
     def prev_ranks(self, before_ts: str) -> dict[str, dict[str, int]]:
@@ -83,7 +87,7 @@ class Store:
             urls.setdefault(r["story_id"], set()).add(r["url"])
         out, ranks, seen = [], {}, set()
         for r in self.conn.execute("SELECT * FROM stories WHERE snapshot_id=?", (row["id"],)):
-            ranks.setdefault(r["category"], {})[r["story_id"]] = r["rank"]
+            ranks.setdefault(r["category"], {})[r["issue"] or r["story_id"]] = r["rank"]
             if r["story_id"] in seen:
                 continue
             seen.add(r["story_id"])
@@ -187,9 +191,10 @@ class Store:
             c.executemany("INSERT OR REPLACE INTO ranking_news VALUES(?,?,?,?,?,?)",
                           [(sid, it["press"], it["r"], it["t"], it["u"], it["d"]) for it in snap["portals"].get("naver_ranking", [])])
             for cat, rows in snap.get("stories", {}).items():
-                c.executemany("INSERT OR REPLACE INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                c.executemany("INSERT OR REPLACE INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                               [(sid, r["id"], cat, r["r"], r["s"], json.dumps(r["label"], ensure_ascii=False), r["title"], r["url"], r["press"],
-                                r["n"], r["outlets"], r["search"], r["src"], r["spike"], r["first"], json.dumps(r["kw"], ensure_ascii=False)) for r in rows])
+                                r["n"], r["outlets"], r["search"], r["src"], r["spike"], r["first"], json.dumps(r["kw"], ensure_ascii=False),
+                                r.get("iid", ""), json.dumps(r.get("subs", []), ensure_ascii=False)) for r in rows])
             for stid, arts in snap.get("story_articles", {}).items():
                 for a in arts:
                     c.execute("INSERT INTO articles VALUES(?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET title=excluded.title, press=excluded.press, published=excluded.published", (a["u"], a["t"], a["p"], a["d"], a["o"], snap["ts"]))

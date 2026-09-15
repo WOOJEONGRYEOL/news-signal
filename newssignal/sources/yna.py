@@ -5,7 +5,7 @@ import html
 import re
 import xml.etree.ElementTree as ET
 
-from ..fetch import get
+from ..fetch import clean_xml, get
 from ..timeutil import from_rfc822
 
 CATS = {
@@ -17,8 +17,7 @@ TAG = re.compile(r"<[^>]+>")
 
 
 def fetch_yna(slug: str) -> list[dict]:
-    xml = get(f"https://www.yna.co.kr/rss/{slug}.xml")
-    root = ET.fromstring(xml)
+    root = ET.fromstring(clean_xml(get(f"https://www.yna.co.kr/rss/{slug}.xml")))
     out: list[dict] = []
     for item in root.iter("item"):
         title = html.unescape(TAG.sub("", item.findtext("title") or "")).strip()

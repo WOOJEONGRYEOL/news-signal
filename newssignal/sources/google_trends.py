@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 
-from ..fetch import get
+from ..fetch import clean_xml, get
 from ..timeutil import from_rfc822
 
 NS = {"ht": "https://trends.google.com/trending/rss"}
@@ -29,8 +29,7 @@ def parse_traffic(s: str) -> int:
 
 
 def fetch_trends(geo: str = "KR") -> list[dict]:
-    xml = get(f"https://trends.google.com/trending/rss?geo={geo}")
-    root = ET.fromstring(xml)
+    root = ET.fromstring(clean_xml(get(f"https://trends.google.com/trending/rss?geo={geo}")))
     out: list[dict] = []
     for i, item in enumerate(root.iter("item"), 1):
         title = (item.findtext("title") or "").strip()
