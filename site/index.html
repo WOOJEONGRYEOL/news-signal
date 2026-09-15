@@ -527,17 +527,17 @@
         <span class="chip"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
+      <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
+      <div id="chart"><div class="chartnote">불러오는 중…</div></div>
+      <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
+      ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}
       ${(o.subs&&o.subs.length) ? (() => {
-        // 국면이 많으면 목록이 길어져 아래 그래프 위치가 분야마다 들쭉날쭉해진다. 기본은 4줄만.
+        // 국면 목록은 기사 목록 아래에 둔다. 기본 4줄만 펼치고 나머지는 '더 보기'.
         const SHOW = 4, more = o.subs.length - SHOW, list = S.subsOpen ? o.subs : o.subs.slice(0, SHOW);
         return `<h2 style="font-size:15px">이 이슈의 다른 국면 <span class="sub">${o.subs.length}건 · 누르면 그 국면의 기사만 봅니다</span></h2>
       <ol class="plist subs">${list.map(sb => `<li><span class="n"></span><span class="k link" data-sub="${esc(sb.id)}">${esc(sb.title)}<span style="color:var(--muted)"> · ${esc(sb.ld)}</span></span><span class="m">기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></li>`).join("")}</ol>
       ${more > 0 ? `<button class="pill submore" id="subMore">${S.subsOpen ? "국면 접기" : `국면 ${more}건 더 보기`}</button>` : ""}`;
-      })() : ""}
-      <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
-      <div id="chart"><div class="chartnote">불러오는 중…</div></div>
-      <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
-      ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}`;
+      })() : ""}`;
     $("storyChips").querySelectorAll(".chip.k").forEach(c => c.onclick = () => { S.filterKw = c.dataset.k || null; renderStoryDetail(); });
     el.querySelectorAll("[data-sub]").forEach(x => x.onclick = () => { S.sub = x.dataset.sub; renderStoryDetail(); });
     const sm = $("subMore"); if(sm) sm.onclick = () => { S.subsOpen = !S.subsOpen; renderStoryDetail(); };
