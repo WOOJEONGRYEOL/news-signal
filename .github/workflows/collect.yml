@@ -14,9 +14,6 @@ on:
         type: choice
         options: [collect, doctor]
 
-permissions:
-  contents: write
-
 concurrency:
   group: collect
   cancel-in-progress: false
@@ -25,6 +22,10 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,6 +71,7 @@ jobs:
           key: ns-db-${{ github.run_id }}
 
       - name: 결과 커밋·푸시
+        id: commit
         if: ${{ inputs.mode != 'doctor' }}
         run: |
           git config user.name "News Signal Bot"
@@ -78,7 +80,35 @@ jobs:
           if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
           git commit -q -m "data: $(TZ=Asia/Seoul date '+%F %H:%M') 수집 (Actions)"
           for i in 1 2 3; do
-            git pull --rebase -q origin main && git push -q && exit 0
+            if git pull --rebase -q origin main && git push -q; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
             sleep 5
           done
           echo "푸시 실패"; exit 1
+
+  # Actions 토큰으로 만든 커밋은 다른 워크플로(pages.yml)를 깨우지 않는다. 그래서 여기서 직접 배포한다.
+  deploy:
+    needs: run
+    if: ${{ needs.run.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
