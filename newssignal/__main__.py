@@ -18,11 +18,25 @@ from .export import export_all, export_latest
 from .store import Store
 
 
+MIN_CORPUS = 200      # 이보다 적으면 정상 수집이 아니라고 본다
+MAX_FAILURES = 20     # 출처가 이만큼 실패했으면 망 문제로 본다
+
+
 def cmd_collect(cfg, args) -> int:
     from .collect import run_collect
+    from .fetch import online
+    if not online():
+        print(f"[{now_kst().isoformat(timespec='minutes')}] 네트워크에 연결되어 있지 않습니다 — 이번 회차를 건너뜁니다.")
+        return 2
     store = Store(cfg.db_path)
     t0 = time.time()
     snap = run_collect(cfg, store, use_news_search=not args.no_search, verbose=args.verbose)
+    corpus = sum(snap["meta"]["corpus"].values())
+    fails = len(snap["meta"]["failures"])
+    if corpus < MIN_CORPUS or fails >= MAX_FAILURES:
+        print(f"[{snap['ts']}] 수집이 정상이 아니어서 저장하지 않습니다 — 기사 {corpus}건, 출처 실패 {fails}곳 "
+              f"({time.time() - t0:.0f}s). 빈 스냅샷이 남으면 흐름 그래프에 0점 구간이 생깁니다.")
+        return 3
     store.save_snapshot(snap)
     export_latest(cfg, snap)
     today = snap["ts"][:10]

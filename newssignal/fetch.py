@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import gzip
 import re
+import socket
 import time
 import urllib.error
 import urllib.request
@@ -22,11 +23,21 @@ def clean_xml(text: str) -> str:
     return BARE_AMP.sub("&amp;", CTRL.sub("", text)).lstrip("\ufeff \t\r\n")
 
 
+def online(host: str = "news.google.com", port: int = 443, timeout: float = 3.0) -> bool:
+    """망이 끊겼는지 빠르게 확인한다. 끊긴 채로 수집을 시작하면 출처마다 시간제한을 기다리느라
+    한 회차가 몇 시간씩 매달리고, 그동안 다음 정시 회차가 통째로 밀린다."""
+    try:
+        with socket.create_connection((host, port), timeout):
+            return True
+    except OSError:
+        return False
+
+
 class FetchError(RuntimeError):
     pass
 
 
-def get(url: str, *, mobile: bool = False, timeout: float = 20, retries: int = 2,
+def get(url: str, *, mobile: bool = False, timeout: float = 8, retries: int = 1,
         encoding: str | None = None) -> str:
     headers = {
         "User-Agent": UA_MOBILE if mobile else UA_DESKTOP,
