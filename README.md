@@ -18,18 +18,32 @@ python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 
 `python3`는 Homebrew의 3.11 이상이어야 합니다(macOS 기본 `/usr/bin/python3`는 3.9라 안내 문구와 함께 멈춥니다).
 
-## 자동 수집과 공유 (2026-09-12 등록 완료)
+## 자동 수집과 공유 (2026-09-16 구조 변경)
 
-이 맥에 LaunchAgent `com.woo.newssignal`이 등록되어 **매시 0분과 30분에** `scripts/run_auto.sh`가 돕니다: 수집 → `site/data` 변경분 커밋 → GitHub 푸시 → GitHub Actions(`.github/workflows/pages.yml`)가 `site/`를 Pages에 배포. 로그는 `logs/collect.log`.
+**수집은 GitHub Actions 가 맡습니다.** 맥이 꺼져 있어도 매시 0분·30분에 돌고, 결과를 `site/data` 에 커밋한 뒤 같은 워크플로에서 Pages 로 배포합니다(`.github/workflows/collect.yml`).
+
+- 회차 사이 상태(급상승 기준선·이슈 연속성)는 Actions 캐시로 잇습니다. 캐시가 비어 있으면 저장소의 `data/seed.sqlite3.gz` 로 시작합니다.
+- 매 회차 끝에 `newssignal compact` 로 최근 3개 스냅샷만 남겨 캐시를 가볍게(약 17MB) 유지합니다. 흐름 그래프는 `site/data` 의 날짜별 JSON 을 읽으므로 옛 스냅샷이 없어도 됩니다.
+- Actions 토큰으로 만든 커밋은 다른 워크플로를 깨우지 않아서, 배포를 `pages.yml` 에 맡기지 않고 수집 워크플로 안에서 직접 합니다.
+
+**맥은 받아오기 담당입니다.** LaunchAgent `com.woo.newssignal` 이 30분마다 `scripts/run_auto.sh` 를 돌려 원격을 받아 옵니다(로컬 대시보드도 최신이 됨). 클라우드가 75분 넘게 밀렸을 때만 이 맥이 대신 수집해 밀어 넣습니다.
 
 ```bash
-launchctl list | grep com.woo.newssignal        # 상태 (두 번째 칸이 마지막 종료 코드, 0이면 정상)
-bash scripts/install_launchagent.sh              # 재등록 (스크립트나 간격을 바꿨을 때)
-launchctl bootout gui/$(id -u)/com.woo.newssignal   # 해제
-python3 -m newssignal loop --every 30            # LaunchAgent 대신 터미널에서 반복하고 싶을 때
+launchctl list | grep com.woo.newssignal        # 상태
+bash scripts/install_launchagent.sh              # 재등록
+gh workflow run collect.yml -f mode=doctor       # 러너에서 출처 연결만 점검
+gh workflow run collect.yml -f mode=collect      # 클라우드 수집 즉시 1회
+python3 -m newssignal collect                    # 이 맥에서 직접 수집
 ```
 
-맥이 잠자거나 로그아웃돼 있으면 그 시간대는 건너뛰고, 깨어나면 밀린 회차를 한 번으로 합쳐 돕니다.
+### 멈추지 않게 하는 장치
+
+2026-09-16 오전, 망이 끊긴 채 시작된 회차가 출처마다 시간제한을 기다리며 3시간 넘게 매달렸고, launchd 는 같은 작업이 돌고 있으면 다음 회차를 띄우지 않아 수집이 8시간 멈췄습니다. 그래서 넣은 장치입니다.
+
+- 수집 전에 연결을 확인하고(3초), 끊겼으면 즉시 건너뜁니다.
+- 출처당 시간제한 8초·재시도 1회. 전부 실패해도 한 회차가 몇 분 안에 끝납니다.
+- `run_auto.sh` 에 7분 하드 타임아웃. 넘기면 강제로 끊습니다.
+- 기사가 200건 미만이거나 출처 20곳 이상이 실패한 회차는 저장하지 않습니다. 흐름 그래프에 0점 구간이 생기지 않습니다.
 
 ### 부하와 무료 한도
 
