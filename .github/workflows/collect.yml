@@ -5,7 +5,9 @@ name: Collect
 
 on:
   schedule:
-    - cron: "0,30 * * * *"      # UTC 기준이지만 KST 도 정각·30분 (UTC+9)
+    # GitHub 예약은 부하에 따라 늦거나 아예 건너뛴다(실제로 5시간 반 동안 한 번만 돌았다).
+    # 그래서 15분마다 깨우고, 최근 수집이 25분 이내면 바로 건너뛴다 → 실질 30분 간격.
+    - cron: "*/15 * * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -38,8 +40,29 @@ jobs:
           echo "러너 위치:"; curl -s --max-time 10 https://ipinfo.io/json || true
           echo; echo "출처 점검:"; python -m newssignal doctor
 
-      - name: 데이터베이스 복원 (캐시)
+      - name: 최근 수집 확인
+        id: fresh
         if: ${{ inputs.mode != 'doctor' }}
+        run: |
+          AGE=$(python - <<'PY'
+          import json
+          from datetime import datetime, timedelta, timezone
+          try:
+              t = json.load(open("site/data/manifest.json"))["latest"]
+              print(int((datetime.now(timezone(timedelta(hours=9))) - datetime.fromisoformat(t)).total_seconds() // 60))
+          except Exception:
+              print(9999)
+          PY
+          )
+          echo "마지막 수집: ${AGE}분 전"
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$AGE" -gt 25 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"; echo "아직 최신이라 건너뜁니다"
+          fi
+
+      - name: 데이터베이스 복원 (캐시)
+        if: ${{ inputs.mode != 'doctor' && steps.fresh.outputs.run == 'true' }}
         uses: actions/cache/restore@v4
         with:
           path: data/newssignal.sqlite3
@@ -47,7 +70,7 @@ jobs:
           restore-keys: ns-db-
 
       - name: 캐시가 비었으면 씨앗 데이터베이스 사용
-        if: ${{ inputs.mode != 'doctor' }}
+        if: ${{ inputs.mode != 'doctor' && steps.fresh.outputs.run == 'true' }}
         run: |
           if [ ! -f data/newssignal.sqlite3 ] && [ -f data/seed.sqlite3.gz ]; then
             echo "캐시 없음 → 씨앗 복원"
@@ -56,15 +79,15 @@ jobs:
           ls -la data/ || true
 
       - name: 수집
-        if: ${{ inputs.mode != 'doctor' }}
+        if: ${{ inputs.mode != 'doctor' && steps.fresh.outputs.run == 'true' }}
         run: python -m newssignal collect
 
       - name: 데이터베이스 줄이기 (최근 회차만)
-        if: ${{ inputs.mode != 'doctor' }}
+        if: ${{ inputs.mode != 'doctor' && steps.fresh.outputs.run == 'true' }}
         run: python -m newssignal compact --keep 3
 
       - name: 데이터베이스 저장 (캐시)
-        if: ${{ inputs.mode != 'doctor' }}
+        if: ${{ inputs.mode != 'doctor' && steps.fresh.outputs.run == 'true' }}
         uses: actions/cache/save@v4
         with:
           path: data/newssignal.sqlite3
@@ -72,7 +95,7 @@ jobs:
 
       - name: 결과 커밋·푸시
         id: commit
-        if: ${{ inputs.mode != 'doctor' }}
+        if: ${{ inputs.mode != 'doctor' && steps.fresh.outputs.run == 'true' }}
         run: |
           git config user.name "News Signal Bot"
           git config user.email "noreply@github.com"
