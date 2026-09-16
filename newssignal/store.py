@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS stories(snapshot_id INTEGER, story_id TEXT, category 
     first_seen TEXT, keywords TEXT, issue TEXT DEFAULT '', subs TEXT DEFAULT '', PRIMARY KEY(snapshot_id, category, story_id));
 CREATE TABLE IF NOT EXISTS story_articles(snapshot_id INTEGER, story_id TEXT, url TEXT, ranked TEXT, PRIMARY KEY(snapshot_id, story_id, url));
 CREATE TABLE IF NOT EXISTS related(snapshot_id INTEGER, keyword TEXT, data TEXT, PRIMARY KEY(snapshot_id, keyword));
+CREATE TABLE IF NOT EXISTS daily_snapshots(date TEXT PRIMARY KEY, n INTEGER);
 CREATE TABLE IF NOT EXISTS daily_counts(date TEXT, category TEXT, keyword TEXT, publish_sum INTEGER, n INTEGER,
     PRIMARY KEY(date, category, keyword));
 CREATE TABLE IF NOT EXISTS region_trends(snapshot_id INTEGER, region TEXT, rank INTEGER, keyword TEXT, traffic INTEGER,
@@ -36,6 +37,16 @@ class Store:
         self.conn.row_factory = sqlite3.Row
         self._migrate()
         self.conn.executescript(SCHEMA)
+        self._backfill_daily_snapshots()
+
+    def _backfill_daily_snapshots(self) -> None:
+        """daily_snapshots 가 비어 있으면 지금 남아 있는 스냅샷으로 채운다(기존 데이터베이스 이행용)."""
+        have = self.conn.execute("SELECT COUNT(*) FROM daily_snapshots").fetchone()[0]
+        if have:
+            return
+        with self.conn:
+            self.conn.execute("INSERT OR REPLACE INTO daily_snapshots(date, n) "
+                              "SELECT substr(ts,1,10), COUNT(*) FROM snapshots GROUP BY 1")
 
     def _migrate(self) -> None:
         """예전 stories 표(기본키에 category 없음)는 지우고 다시 만든다 — 스토리 이력만 잃고 나머지는 그대로."""
@@ -62,7 +73,9 @@ class Store:
 
     def baseline(self, since_date: str) -> tuple[dict[tuple[str, str], float], int]:
         """지난 N일 (category, keyword)별 스냅샷당 평균 기사 수 + 그 기간 스냅샷 수"""
-        n = self.conn.execute("SELECT COUNT(*) FROM snapshots WHERE substr(ts,1,10) >= ?", (since_date,)).fetchone()[0]
+        n = self.conn.execute("SELECT COALESCE(SUM(n), 0) FROM daily_snapshots WHERE date >= ?", (since_date,)).fetchone()[0]
+        if not n:   # 옛 데이터베이스
+            n = self.conn.execute("SELECT COUNT(*) FROM snapshots WHERE substr(ts,1,10) >= ?", (since_date,)).fetchone()[0]
         if not n:
             return {}, 0
         out = {}
@@ -72,6 +85,8 @@ class Store:
 
     def add_daily_counts(self, date: str, rows: list[tuple[str, str, int]]) -> None:
         with self.conn:
+            self.conn.execute("INSERT INTO daily_snapshots(date, n) VALUES(?,1) "
+                              "ON CONFLICT(date) DO UPDATE SET n = n + 1", (date,))
             self.conn.executemany(
                 "INSERT INTO daily_counts(date, category, keyword, publish_sum, n) VALUES(?,?,?,?,1) "
                 "ON CONFLICT(date, category, keyword) DO UPDATE SET publish_sum=publish_sum+excluded.publish_sum, n=n+1",
@@ -166,6 +181,28 @@ class Store:
         return [(r["ts"], r["score"], r["rank"]) for r in self.conn.execute(
             "SELECT s.ts, r.score, r.rank FROM ranks r JOIN snapshots s ON s.id=r.snapshot_id "
             "WHERE r.keyword=? AND r.category=? AND s.ts>=? ORDER BY s.ts", (keyword, category, since_ts))]
+
+    def compact(self, keep: int = 3) -> tuple[int, int]:
+        """최근 keep 개 스냅샷만 남기고 나머지 회차 데이터를 지운다.
+
+        흐름 그래프는 site/data 의 날짜별 JSON 을 읽으므로 옛 스냅샷이 없어도 된다.
+        급상승 기준선(daily_counts·daily_snapshots)과 기사 제목은 남긴다.
+        """
+        keep_ids = [r[0] for r in self.conn.execute("SELECT id FROM snapshots ORDER BY ts DESC LIMIT ?", (keep,))]
+        if not keep_ids:
+            return 0, 0
+        q = ",".join("?" * len(keep_ids))
+        before = self.conn.execute("SELECT COUNT(*) FROM snapshots").fetchone()[0]
+        with self.conn:
+            for t in ("stories", "story_articles", "ranks", "keyword_articles",
+                      "portal_items", "ranking_news", "region_trends", "related"):
+                self.conn.execute(f"DELETE FROM {t} WHERE snapshot_id NOT IN ({q})", keep_ids)
+            self.conn.execute(f"DELETE FROM snapshots WHERE id NOT IN ({q})", keep_ids)
+            self.conn.execute("DELETE FROM articles WHERE url NOT IN "
+                              "(SELECT url FROM keyword_articles UNION SELECT url FROM story_articles)")
+        self.conn.execute("VACUUM")
+        after = self.conn.execute("SELECT COUNT(*) FROM snapshots").fetchone()[0]
+        return before, after
 
     # ---- 쓰기 ----
     def save_snapshot(self, snap: dict) -> int:

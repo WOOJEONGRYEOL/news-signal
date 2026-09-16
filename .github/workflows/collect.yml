@@ -58,6 +58,10 @@ jobs:
         if: ${{ inputs.mode != 'doctor' }}
         run: python -m newssignal collect
 
+      - name: 데이터베이스 줄이기 (최근 회차만)
+        if: ${{ inputs.mode != 'doctor' }}
+        run: python -m newssignal compact --keep 3
+
       - name: 데이터베이스 저장 (캐시)
         if: ${{ inputs.mode != 'doctor' }}
         uses: actions/cache/save@v4

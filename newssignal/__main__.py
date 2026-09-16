@@ -94,6 +94,15 @@ def cmd_loop(cfg, args) -> int:
         time.sleep(every * 60)
 
 
+def cmd_compact(cfg, args) -> int:
+    store = Store(cfg.db_path)
+    size0 = cfg.db_path.stat().st_size
+    before, after = store.compact(args.keep)
+    size1 = cfg.db_path.stat().st_size
+    print(f"스냅샷 {before} → {after}개 · {size0/1048576:.1f}MB → {size1/1048576:.1f}MB")
+    return 0
+
+
 def cmd_doctor(cfg, args) -> int:
     from .sources import google_news, google_trends, nate, naver, yna, zum
     now = now_kst()
@@ -134,10 +143,13 @@ def main(argv=None) -> int:
     l.add_argument("--every", type=int, default=None)
     l.add_argument("--no-search", action="store_true")
     l.add_argument("-v", "--verbose", action="store_true")
+    cp = sub.add_parser("compact", help="최근 회차만 남기고 데이터베이스 줄이기(클라우드용)")
+    cp.add_argument("--keep", type=int, default=3, help="남길 스냅샷 수 (기본 3)")
     sub.add_parser("doctor", help="출처별 연결 상태 점검")
     args = p.parse_args(argv)
     cfg = load(args.root)
-    return {"collect": cmd_collect, "build": cmd_build, "serve": cmd_serve, "loop": cmd_loop, "doctor": cmd_doctor}[args.cmd](cfg, args)
+    return {"collect": cmd_collect, "build": cmd_build, "serve": cmd_serve, "loop": cmd_loop,
+            "compact": cmd_compact, "doctor": cmd_doctor}[args.cmd](cfg, args)
 
 
 if __name__ == "__main__":

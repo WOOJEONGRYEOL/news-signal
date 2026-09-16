@@ -10,6 +10,39 @@ from .sources.google_trends import REGIONS
 from .store import Store
 
 
+def _read(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _merge_day(path: Path, fresh: dict) -> dict:
+    """이미 쌓인 시각을 지우지 않고 합친다.
+
+    수집이 두 곳(맥·클라우드)에서 돌 수 있고 각자 데이터베이스가 다르다. 파일을 통째로 덮어쓰면
+    상대가 기록한 시각이 사라져 흐름 그래프에 구멍이 난다. 같은 시각은 새 값이 이긴다.
+    """
+    old = _read(path)
+    if not isinstance(old, dict) or not isinstance(old.get("snapshots"), list):
+        return fresh
+    by_ts = {s.get("ts"): s for s in old["snapshots"] if isinstance(s, dict)}
+    by_ts.update({s["ts"]: s for s in fresh["snapshots"]})
+    fresh["snapshots"] = [by_ts[t] for t in sorted(by_ts)]
+    return fresh
+
+
+def _merge_articles(path: Path, fresh: dict) -> dict:
+    old = _read(path)
+    if not isinstance(old, dict):
+        return fresh
+    for key in ("articles", "story_articles"):
+        merged = dict(old.get(key) or {})
+        merged.update(fresh.get(key) or {})
+        fresh[key] = merged
+    return fresh
+
+
 def _write(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
@@ -41,10 +74,13 @@ def export_day(cfg: Config, store: Store, date: str) -> None:
         extras["snapshots"].append({"ts": s["ts"], "portals": store.portal_items(s["id"]), "regions": store.regions(s["id"]),
                                     "naver_ranking": store.ranking_news(s["id"], cfg.home_press, all_rows=False),
                                     "related": store.related_for(s["id"])})
-    _write(cfg.site_dir / "data" / "days" / f"{date}.json", day)
-    _write(cfg.site_dir / "data" / "extras" / f"{date}.json", extras)
-    _write(cfg.site_dir / "data" / "articles" / f"{date}.json", {"date": date, "articles": store.articles_for_day(ids),
-                                                                  "story_articles": store.story_articles_for_day(ids)})
+    day_path = cfg.site_dir / "data" / "days" / f"{date}.json"
+    extras_path = cfg.site_dir / "data" / "extras" / f"{date}.json"
+    arts_path = cfg.site_dir / "data" / "articles" / f"{date}.json"
+    _write(day_path, _merge_day(day_path, day))
+    _write(extras_path, _merge_day(extras_path, extras))
+    _write(arts_path, _merge_articles(arts_path, {"date": date, "articles": store.articles_for_day(ids),
+                                                  "story_articles": store.story_articles_for_day(ids)}))
 
 
 def export_manifest(cfg: Config, store: Store) -> None:
