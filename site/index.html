@@ -309,7 +309,7 @@
   </div>
 
   <div class="regions">
-    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역에 마우스를 올려 보세요</span><span class="touchhint">권역을 눌러 보세요</span></span></h2><div id="krmapwrap"><div id="krTip" class="krtip"></div><div id="krmap"></div></div>
+    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역에 마우스를 올리면 그 지역이 멈춰 보입니다</span><span class="touchhint">권역을 눌러 보세요</span></span></h2><div id="krmapwrap"><div id="krTip" class="krtip"></div><div id="krmap"></div></div>
       <div class="nethelp"><span><i style="background:rgba(240,165,42,.85)"></i>진할수록 그 지역에서만 뜨는 검색어가 많음</span><span><i style="background:rgba(10,122,255,.25)"></i>전국 목록과 같은 지역</span><span><i style="background:rgba(120,130,150,.25)"></i>세종은 구글 트렌드 미지원</span></div></section>
     <section class="glass panel" id="regionDetail"></section>
   </div>
@@ -972,9 +972,10 @@
   // ---------- 지역 (실제 시·도 지도) ----------
   let regionLeaveTimer = null, krBuilt = false, regionCycleTimer = null, regionCycleIdx = -1, regionHover = null;
   // 도(道)에 둘러싸인 작은 시들 — 그리는 순서에서 항상 위에 있어야 커서가 도에 먹히지 않는다
-  const CITY_ON_TOP = ["KR-41","KR-28","KR-11","KR-50","KR-30","KR-29","KR-27","KR-31","KR-26"];
+  // 경기(KR-41)는 도(道)라서 여기 들어가면 안 된다 — 들어가면 순환이 지날 때 그 안의 서울·인천을 덮어 버린다
+  const CITY_ON_TOP = ["KR-28","KR-11","KR-50","KR-30","KR-29","KR-27","KR-31","KR-26"];
   const ROTATION = ["KR-11","KR-28","KR-41","KR-42","KR-43","KR-44","KR-30","KR-45","KR-29","KR-46","KR-47","KR-27","KR-31","KR-48","KR-26","KR-49"];
-  const CYCLE_MS = 4500;
+  const CYCLE_MS = 4500, RESUME_MS = 8000;   // 순환 간격 / 지도를 벗어난 뒤 순환이 다시 돌기까지
   function cycleList(){ const R = (S.view||{}).regions||{}; return ROTATION.filter(c => (R[c]||[]).length); }
   function cycleStep(){
     const list = cycleList(); if(!list.length) return;
@@ -1014,7 +1015,20 @@
         el.onclick = ev => { ev.stopPropagation(); S.region = (S.region===code) ? null : code; svg.querySelectorAll("path").forEach(p2 => p2.classList.toggle("pinned", p2.dataset.code===S.region)); if(S.region){ stopCycle(); popRegion(code); renderRegionSide(code); } else { regionHover = null; startCycle(); } syncHash(); };
       });
       svg.onclick = () => { S.region = null; svg.querySelectorAll("path").forEach(p2 => p2.classList.remove("pinned")); syncHash(); regionHover = null; startCycle(); };
-      svg.onmouseleave = () => { regionHover = null; clearTimeout(regionLeaveTimer); regionLeaveTimer = setTimeout(() => { if(S.region){ popRegion(S.region); renderRegionSide(S.region); } else startCycle(); }, 900); };
+      svg.onmouseleave = () => { regionHover = null; };   // 순환 재개는 아래 영역 전체에서 판단한다
+      // 지도에서 순위 패널로 커서를 옮겨 읽는 동안에도 순환이 다시 돌면 읽던 내용이 사라진다.
+      // 그래서 '지역별 관심사' 영역을 완전히 벗어난 뒤 몇 초가 지나야 다시 돈다.
+      const wrap = svg.closest(".regions");
+      if(wrap){
+        wrap.onmouseenter = () => clearTimeout(regionLeaveTimer);
+        wrap.onmouseleave = () => {
+          regionHover = null;
+          clearTimeout(regionLeaveTimer);
+          regionLeaveTimer = setTimeout(() => {
+            if(S.region){ popRegion(S.region); renderRegionSide(S.region); } else startCycle();
+          }, RESUME_MS);
+        };
+      }
     }
     $("krSvg").querySelectorAll("path").forEach(el => { const code = el.dataset.code; el.style.fill = regionFill(R[code]||[], code); el.classList.toggle("pinned", code===S.region); });
     if(S.region && !M.regions[S.region]) S.region = null;
