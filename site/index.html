@@ -206,6 +206,10 @@
   .defs dd{margin:0}
   .defs .eq{display:block;color:var(--text);font-weight:600}
   .defs .note{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  .sig4{border-collapse:collapse;width:auto;max-width:100%;font-size:12.5px;margin:2px 0}
+  .sig4 th{text-align:left;font-weight:700;color:var(--text);white-space:nowrap;padding:3px 14px 3px 0;vertical-align:top}
+  .sig4 td{padding:3px 14px 3px 0;vertical-align:top}
+  .sig4 td:last-child{color:var(--dim);padding-right:0}
   @media (max-width:700px){ .defs{grid-template-columns:minmax(0,1fr);gap:2px} .defs dt{margin-top:8px} }
   .sig{margin:14px 6px 0;padding-top:12px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;text-align:center}
   .sig b{color:var(--muted);font-weight:700}
@@ -318,11 +322,19 @@
 
       <dt>스토리 점수</dt>
       <dd><span class="eq"><i class="sw" style="background:var(--consume)"></i>소비 <span id="sC"></span> + <i class="sw" style="background:var(--publish)"></i>발행 <span id="sP"></span> + <i class="sw" style="background:var(--search)"></i>검색 <span id="sS"></span> + <i class="sw" style="background:var(--spike)"></i>급상승 <span id="sK"></span></span>
-        <span class="note">소비 = ‘많이 본 기사’에 이 사건을 올린 언론사 수 · 발행 = 묶인 기사 수 · 검색 = 실시간 검색어와 맞물림 · 급상승 = 등장 3시간 내이거나 직전보다 기사 증가</span></dd>
+        <span class="note">각 신호가 무엇을 세고 어디서 오는지는 아래 <b>신호</b> 표 참고</span></dd>
 
       <dt>키워드 점수</dt>
       <dd><span class="eq"><i class="sw" style="background:var(--search)"></i>검색 <span id="wS"></span> + <i class="sw" style="background:var(--publish)"></i>발행 <span id="wP"></span> + <i class="sw" style="background:var(--consume)"></i>소비 <span id="wC"></span> + <i class="sw" style="background:var(--spike)"></i>급상승 <span id="wK"></span></span>
         <span class="note">급상승은 지난 7일 평균 대비. 가중치는 <code>config.toml</code>에서 바꿀 수 있음</span></dd>
+
+      <dt>신호</dt>
+      <dd><table class="sig4">
+        <tr><th><i class="sw" style="background:var(--consume)"></i>소비</th><td>‘많이 본 기사’에 이 사건·키워드를 올린 언론사 수</td><td>네이버 랭킹뉴스 (언론사 82곳 × 각 Top 5)</td></tr>
+        <tr><th><i class="sw" style="background:var(--publish)"></i>발행</th><td>기사 제목에 등장한 건수</td><td>네이버 섹션 헤드라인 · 연합뉴스 RSS · 구글 뉴스 주제 피드</td></tr>
+        <tr><th><i class="sw" style="background:var(--search)"></i>검색</th><td>실시간 검색어에 올라 있는지 (순위·트래픽 반영)</td><td>구글 트렌드 · 네이트 · 줌</td></tr>
+        <tr><th><i class="sw" style="background:var(--spike)"></i>급상승</th><td>스토리 = 등장 3시간 내이거나 직전보다 증가 · 키워드 = 7일 평균 대비</td><td>30분마다 쌓은 자체 이력</td></tr>
+      </table></dd>
 
       <dt>관계망</dt>
       <dd>주요 키워드만 펼친 워드클라우드. 글자에 올리면 함께 다뤄진 말이 주변에 나타나고 관련 기사가 뜸.</dd>
@@ -334,7 +346,7 @@
       <dd>매시 <b>0분·30분</b>. 화면은 1분마다 1KB짜리 목록만 확인하므로 출처에 부담 없음.</dd>
 
       <dt>출처</dt>
-      <dd>네이버 섹션·랭킹뉴스 · 연합뉴스 RSS · 구글 뉴스 피드/트렌드 · 네이트 · 줌 (최근 24시간). 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강.</dd>
+      <dd>위 <b>신호</b> 표 참고. 기사는 최근 24시간치만 쓰고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강함.</dd>
 
       <dt>빠진 것</dt>
       <dd>다음(2025년 개편으로 랭킹 페이지 없음) · 연령·성별(무료로 믿을 만한 출처 없음) · 세종(구글 트렌드 미지원). 지도 경계는 Natural Earth(퍼블릭 도메인)를 단순화.</dd>
@@ -509,6 +521,13 @@
   const RANGES = [24, 48, 72];
   const rangeSeg = () => `<div class="seg rangeseg">${RANGES.map(h => `<button data-h="${h}" class="${S.rangeH===h?"on":""}">${h}시간</button>`).join("")}</div>`;
   const bindRange = (el, rerender) => el.querySelectorAll(".rangeseg button").forEach(b => b.onclick = () => { S.rangeH = +b.dataset.h; rerender(); });
+  const SIG_TIP = {
+    consume: "네이버 랭킹뉴스 — ‘많이 본 기사’에 올린 언론사 수",
+    publish: "네이버 섹션 헤드라인·연합뉴스 RSS·구글 뉴스 주제 피드 — 제목에 등장한 기사 수",
+    search: "구글 트렌드·네이트·줌 — 실시간 검색어 순위와 트래픽",
+    spikeStory: "30분마다 쌓은 자체 이력 — 등장 3시간 내이거나 직전 수집보다 기사 증가",
+    spikeKw: "30분마다 쌓은 자체 이력 — 지난 7일 평균 대비 몇 배",
+  };
   const newsLi = (a, dim) => `<li class="${dim?"dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${(a.rp||[]).length ? `<span class="rp">많이 본 · ${a.rp.length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`;
 
   // ---------- 스토리 ----------
@@ -563,10 +582,10 @@
       <div class="chips" id="storyChips">${(o.kw||[]).map(([k,c]) => `<span class="chip k ${fk===k?"on":""}" data-k="${esc(k)}">${esc(k)}<small>${c}</small></span>`).join("")}
         ${fk ? `<span class="chip k" data-k="">필터 해제 ✕</span>` : ""}</div>
       <div class="chips">
-        <span class="chip"><i style="background:var(--consume)"></i>소비 ${o.outlets}곳</span>
-        <span class="chip"><i style="background:var(--publish)"></i>발행 ${o.n}건</span>
-        <span class="chip"><i style="background:var(--search)"></i>검색 ${o.search}</span>
-        <span class="chip"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
+        <span class="chip" title="${esc(SIG_TIP.consume)}"><i style="background:var(--consume)"></i>소비 ${o.outlets}곳</span>
+        <span class="chip" title="${esc(SIG_TIP.publish)}"><i style="background:var(--publish)"></i>발행 ${o.n}건</span>
+        <span class="chip" title="${esc(SIG_TIP.search)}"><i style="background:var(--search)"></i>검색 ${o.search}</span>
+        <span class="chip" title="${esc(SIG_TIP.spikeStory)}"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
       <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
@@ -632,10 +651,10 @@
       <h2>${esc(o.kd||o.k)} <span class="pt">${o.s.toFixed(1)}점</span> <span class="sub">${S.cat} ${o.r}위 ${deltaHtml(o.d)}</span></h2>
       <p class="narr">${esc(narrative(o))}</p>
       <div class="chips">
-        <span class="chip"><i style="background:var(--search)"></i>검색 ${o.sig.search}</span>
-        <span class="chip"><i style="background:var(--publish)"></i>발행 ${o.sig.publish}건</span>
-        <span class="chip"><i style="background:var(--consume)"></i>소비 ${o.sig.consume}건</span>
-        <span class="chip"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
+        <span class="chip" title="${esc(SIG_TIP.search)}"><i style="background:var(--search)"></i>검색 ${o.sig.search}</span>
+        <span class="chip" title="${esc(SIG_TIP.publish)}"><i style="background:var(--publish)"></i>발행 ${o.sig.publish}건</span>
+        <span class="chip" title="${esc(SIG_TIP.consume)}"><i style="background:var(--consume)"></i>소비 ${o.sig.consume}건</span>
+        <span class="chip" title="${esc(SIG_TIP.spikeKw)}"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
       <h2 style="font-size:15px">연관어 <span class="sub">함께 등장한 말 · 누르면 그 조합으로 파고듭니다</span></h2>
