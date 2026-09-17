@@ -24,7 +24,7 @@
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#0c0f15; --text:#eceef3; --muted:#9aa3b3; --dim:#5f6775; --line:rgba(255,255,255,.08);
+      --bg:#0c0f15; --text:#eceef3; --muted:#b2bbca; --dim:#8b95a8; --line:rgba(255,255,255,.12);
       --glass:rgba(30,34,44,.55); --glass2:rgba(30,34,44,.35); --glass-hi:rgba(48,54,68,.75); --glass-border:rgba(255,255,255,.12);
       --shadow:0 18px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
       --shadow-sm:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07);
@@ -818,9 +818,11 @@
   function renderNetSide(key, origin, ghostText){
     const v = S.view, g = S.graph, el = $("netSide");
     if(!key){
-      const top = g.N.map(n => ({n, deg:((v.related||{})[n.k]||[]).length})).sort((a,b)=>b.deg-a.deg || b.n.s-a.n.s).slice(0,8);
-      el.innerHTML = `<h2>연관어가 많은 키워드</h2><p class="narr" style="color:var(--muted)">글자에 마우스를 올리면 그 키워드와 함께 다뤄진 말들이 주변에 나타나고, 관련 기사가 여기에 뜹니다. 지금 연관어가 가장 많은 키워드는 다음과 같습니다.</p>
-        <ol class="plist">${top.map(({n,deg}) => `<li><span class="n"></span><span class="k link" data-k="${esc(n.k)}"><span class="cat" style="background:${CAT_COLOR[n.cat]};margin-right:6px">${n.cat}</span>${esc(n.text)}</span><span class="m">연관어 ${deg}</span></li>`).join("")}</ol>`;
+      // 연관어 '개수'는 저장 상한(키워드당 10개)에 걸려 상위권이 모두 10으로 같아진다. 함께 등장한 기사 수 합계로 센다.
+      const top = g.N.map(n => ({n, w:((v.related||{})[n.k]||[]).reduce((a, x) => a + (x[2] || 0), 0)}))
+                     .sort((a,b) => b.w - a.w || b.n.s - a.n.s).slice(0,8);
+      el.innerHTML = `<h2>연관이 넓은 키워드</h2><p class="narr" style="color:var(--muted)">글자에 마우스를 올리면 그 키워드와 함께 다뤄진 말들이 주변에 나타나고, 관련 기사가 여기에 뜹니다. 지금 다른 말과 가장 넓게 얽혀 있는 키워드는 다음과 같습니다.</p>
+        <ol class="plist">${top.map(({n,w}) => `<li><span class="n"></span><span class="k link" data-k="${esc(n.k)}"><span class="cat" style="background:${CAT_COLOR[n.cat]};margin-right:6px">${n.cat}</span>${esc(n.text)}</span><span class="m">함께 등장 ${w}건</span></li>`).join("")}</ol>`;
       el.querySelectorAll(".k.link").forEach(x => x.onclick = () => { S.pin = x.dataset.k; renderNetwork(); syncHash(); });
       return;
     }
