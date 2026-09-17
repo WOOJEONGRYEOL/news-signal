@@ -275,8 +275,9 @@
       <button data-mode="story" class="on">스토리</button>
       <button data-mode="keyword">키워드</button>
       <button data-mode="map">관계망</button>
+      <button data-mode="region">지역별</button>
     </div>
-    <div class="subrow"><span class="sublabel">분야</span><nav class="tabs" id="tabs"></nav></div>
+    <div class="subrow" id="subrow"><span class="sublabel">분야</span><nav class="tabs" id="tabs"></nav></div>
   </div>
 
   <div class="grid" id="mainGrid">
@@ -299,6 +300,12 @@
     <section class="glass panel side" id="netSide"></section>
   </div>
 
+  <div class="regions hidden" id="regionGrid">
+    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역에 마우스를 올리면 그 지역이 멈춰 보입니다</span><span class="touchhint">권역을 눌러 보세요</span></span></h2><div id="krmapwrap"><div id="krTip" class="krtip"></div><div id="krmap"></div></div>
+      <div class="nethelp"><span><i style="background:rgba(240,165,42,.85)"></i>진할수록 그 지역에서만 뜨는 검색어가 많음</span><span><i style="background:rgba(10,122,255,.25)"></i>전국 목록과 같은 지역</span><span><i style="background:rgba(120,130,150,.25)"></i>세종은 구글 트렌드 미지원</span></div></section>
+    <section class="glass panel" id="regionDetail"></section>
+  </div>
+
   <div class="portals">
     <section class="glass panel"><h2>구글 트렌드 <span class="sub">전국 급상승</span></h2><ol class="plist" id="pGoogle"></ol></section>
     <section class="glass panel"><h2>네이트 실시간 이슈</h2><ol class="plist" id="pNate"></ol></section>
@@ -308,11 +315,6 @@
       <ol class="plist" id="pNaver"></ol></section>
   </div>
 
-  <div class="regions">
-    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역에 마우스를 올리면 그 지역이 멈춰 보입니다</span><span class="touchhint">권역을 눌러 보세요</span></span></h2><div id="krmapwrap"><div id="krTip" class="krtip"></div><div id="krmap"></div></div>
-      <div class="nethelp"><span><i style="background:rgba(240,165,42,.85)"></i>진할수록 그 지역에서만 뜨는 검색어가 많음</span><span><i style="background:rgba(10,122,255,.25)"></i>전국 목록과 같은 지역</span><span><i style="background:rgba(120,130,150,.25)"></i>세종은 구글 트렌드 미지원</span></div></section>
-    <section class="glass panel" id="regionDetail"></section>
-  </div>
 
   <section class="glass panel legend">
     <h2>읽는 법</h2>
@@ -468,7 +470,7 @@
     const W = v.weights || S.manifest.weights || {}, SW = v.story_weights || S.manifest.story_weights || {};
     $("wS").textContent = pct(W.search); $("wP").textContent = pct(W.publish); $("wC").textContent = pct(W.consume); $("wK").textContent = pct(W.spike);
     $("sC").textContent = pct(SW.consume); $("sP").textContent = pct(SW.publish); $("sS").textContent = pct(SW.search); $("sK").textContent = pct(SW.spike);
-    renderModes(); renderTabs(); renderMain(); renderPortals(); renderRegions();
+    renderModes(); renderTabs(); renderMain(); renderPortals();
     const m = v.meta||{}; const corpus = m.corpus ? Object.values(m.corpus).reduce((a,b)=>a+b,0) : null;
     $("foot").textContent = (corpus ? `이번 수집: 기사 ${corpus.toLocaleString()}건 · 스토리 ${m.stories||0}개(이슈 ${m.issues||m.stories||0}묶음) · 네이버 랭킹 ${m.ranking_rows}건 · 지역 ${m.regions}곳 · 급상승 기준 스냅샷 ${m.baseline_snapshots}개` : "") + ` · News Signal v${S.manifest.version||""}`;
   }
@@ -487,9 +489,13 @@
     $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; S.kw = null; S.story = null; S.path=[]; S.filterKw=null; S.pin=null; S.graph=null; renderTabs(); renderMain(); });
   }
   function renderMain(){
-    const map = S.mode==="map";
-    $("mainGrid").classList.toggle("hidden", map);
+    const map = S.mode==="map", region = S.mode==="region";
+    $("mainGrid").classList.toggle("hidden", map || region);
     $("netGrid").classList.toggle("hidden", !map);
+    $("regionGrid").classList.toggle("hidden", !region);
+    $("subrow").classList.toggle("hidden", region);   // 지역별은 분야로 나뉘지 않는다
+    if(region){ renderRegions(); return; }
+    stopCycle();                                       // 다른 화면에서는 지도 순환을 멈춘다
     if(map){ renderNetwork(); return; }
     if(S.mode==="story"){
       $("listTitle").innerHTML = `스토리 Top ${S.manifest.top_n||10} <span class="sub" id="rankSub"></span>`;
@@ -1079,12 +1085,12 @@
   // ---------- 주소 해시 ----------
   function applyHash(){
     const h = new URLSearchParams(location.hash.replace(/^#/, ""));
-    if(["story","keyword","map"].includes(h.get("mode"))) S.mode = h.get("mode");
+    if(["story","keyword","map","region"].includes(h.get("mode"))) S.mode = h.get("mode");
     if(CATS.includes(h.get("cat"))) S.cat = h.get("cat");
     if(h.get("kw")) S.kw = h.get("kw");
     if(h.get("story")) S.story = h.get("story");
     if(h.get("pin")) S.pin = h.get("pin");
-    if(h.get("region")) S.region = h.get("region");
+    if(h.get("region")){ S.region = h.get("region"); if(!h.get("mode")) S.mode = "region"; }
     if(["24","48","72"].includes(h.get("range"))) S.rangeH = +h.get("range");
     if(["home","top"].includes(h.get("nv"))) S.nvMode = h.get("nv");
     if(h.has("noanim")) document.documentElement.classList.add("noanim");
