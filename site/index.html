@@ -93,6 +93,15 @@
   .delta{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .delta.up{color:var(--up)} .delta.down{color:var(--down)} .delta.new{color:var(--accent);font-weight:700} .delta.same{color:var(--dim)}
   .bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--line);min-width:80px}
+  /* 브라우저 기본 툴팁은 1초쯤 늦게 떠서 답답하다. 올리는 즉시 뜨는 말풍선으로 대신한다. */
+  .tipwrap{position:relative}
+  .tipwrap::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%) translateY(3px);
+    background:var(--glass-hi);border:1px solid var(--glass-border);border-radius:10px;padding:6px 10px;white-space:nowrap;
+    font-size:12px;font-weight:500;color:var(--text);box-shadow:var(--shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    z-index:30;opacity:0;pointer-events:none;transition:opacity .08s,transform .08s}
+  .tipwrap:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+  .tipwrap.wide::after{white-space:normal;width:250px;text-align:left;line-height:1.45}
+  @media (hover:none){ .tipwrap::after{display:none} }
   .bar i{display:block;height:100%}
   .bar .s{background:var(--search)} .bar .p{background:var(--publish)} .bar .c{background:var(--consume)} .bar .k{background:var(--spike)}
   .score{font-variant-numeric:tabular-nums;text-align:right;width:52px;font-weight:600}
@@ -523,7 +532,7 @@
     return `<span class="delta same">–</span>`;
   }
   const srcHtml = s => `<span class="src">${[...(s||"")].map(c => `<b class="${c}">${c}</b>`).join("")}</span>`;
-  const barHtml = (g, title) => `<div class="bar" title="${esc(title)}">${["c","p","s","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("")}</div>`;
+  const barHtml = (g, title) => `<div class="bar tipwrap" data-tip="${esc(title)}">${["c","p","s","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("")}</div>`;
   const RANGES = [24, 48, 72];
   const rangeSeg = () => `<div class="seg rangeseg">${RANGES.map(h => `<button data-h="${h}" class="${S.rangeH===h?"on":""}">${h}시간</button>`).join("")}</div>`;
   const bindRange = (el, rerender) => el.querySelectorAll(".rangeseg button").forEach(b => b.onclick = () => { S.rangeH = +b.dataset.h; rerender(); });
@@ -588,10 +597,10 @@
       <div class="chips" id="storyChips">${(o.kw||[]).map(([k,c]) => `<span class="chip k ${fk===k?"on":""}" data-k="${esc(k)}">${esc(k)}<small>${c}</small></span>`).join("")}
         ${fk ? `<span class="chip k" data-k="">필터 해제 ✕</span>` : ""}</div>
       <div class="chips">
-        <span class="chip" title="${esc(SIG_TIP.consume)}"><i style="background:var(--consume)"></i>소비 ${o.outlets}곳</span>
-        <span class="chip" title="${esc(SIG_TIP.publish)}"><i style="background:var(--publish)"></i>발행 ${o.n}건</span>
-        <span class="chip" title="${esc(SIG_TIP.search)}"><i style="background:var(--search)"></i>검색 ${o.search}</span>
-        <span class="chip" title="${esc(SIG_TIP.spikeStory)}"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.consume)}"><i style="background:var(--consume)"></i>소비 ${o.outlets}곳</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.publish)}"><i style="background:var(--publish)"></i>발행 ${o.n}건</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.search)}"><i style="background:var(--search)"></i>검색 ${o.search}</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.spikeStory)}"><i style="background:var(--spike)"></i>급상승 ${o.spike}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
       <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
@@ -657,10 +666,10 @@
       <h2>${esc(o.kd||o.k)} <span class="pt">${o.s.toFixed(1)}점</span> <span class="sub">${S.cat} ${o.r}위 ${deltaHtml(o.d)}</span></h2>
       <p class="narr">${esc(narrative(o))}</p>
       <div class="chips">
-        <span class="chip" title="${esc(SIG_TIP.search)}"><i style="background:var(--search)"></i>검색 ${o.sig.search}</span>
-        <span class="chip" title="${esc(SIG_TIP.publish)}"><i style="background:var(--publish)"></i>발행 ${o.sig.publish}건</span>
-        <span class="chip" title="${esc(SIG_TIP.consume)}"><i style="background:var(--consume)"></i>소비 ${o.sig.consume}건</span>
-        <span class="chip" title="${esc(SIG_TIP.spikeKw)}"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.search)}"><i style="background:var(--search)"></i>검색 ${o.sig.search}</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.publish)}"><i style="background:var(--publish)"></i>발행 ${o.sig.publish}건</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.consume)}"><i style="background:var(--consume)"></i>소비 ${o.sig.consume}건</span>
+        <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.spikeKw)}"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
       <h2 style="font-size:15px">연관어 <span class="sub">함께 등장한 말 · 누르면 그 조합으로 파고듭니다</span></h2>
