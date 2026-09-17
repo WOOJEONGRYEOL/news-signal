@@ -198,10 +198,17 @@
   ol.plist.subs li{align-items:flex-start}
   .tag.loc{color:var(--spike);border-color:rgba(240,165,42,.5)} .tag.nat{color:var(--accent);border-color:rgba(10,122,255,.4)}
   .legend{margin-top:16px;color:var(--muted);font-size:13px}
-  .legend p{margin:6px 0}
   .legend b{color:var(--text)}
-  .legend i.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 5px 0 2px;vertical-align:-1px}
+  .legend i.sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px 0 0;vertical-align:0}
   .legend code{background:var(--glass2);padding:0 5px;border-radius:6px}
+  .defs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 16px;margin:0}
+  .defs dt{color:var(--text);font-weight:700;white-space:nowrap}
+  .defs dd{margin:0}
+  .defs .eq{display:block;color:var(--text);font-weight:600}
+  .defs .note{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  @media (max-width:700px){ .defs{grid-template-columns:minmax(0,1fr);gap:2px} .defs dt{margin-top:8px} }
+  .sig{margin:14px 6px 0;padding-top:12px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;text-align:center}
+  .sig b{color:var(--muted);font-weight:700}
   .foot{color:var(--dim);font-size:12px;margin-top:10px}
   .err{background:rgba(224,86,76,.12);border:1px solid rgba(224,86,76,.35);color:var(--text);padding:10px 14px;border-radius:14px;margin:12px 0}
   .hidden{display:none!important}
@@ -305,16 +312,39 @@
 
   <section class="glass panel legend">
     <h2>읽는 법</h2>
-    <p><b>스토리</b>는 같은 사건을 다룬 기사 묶음입니다. 한 사건이 커지면 국면마다(고성·해명·반응) 따로 묶이는데, 같은 앵커 키워드를 공유하면 하나의 <b>이슈</b>로 접어 순위에 한 줄만 올립니다. ‘국면 7’ 표시가 그것이고, 상세에서 다른 국면을 눌러 볼 수 있습니다. 제목은 묶음을 대표하는 기사 한 줄이고, 그 아래 작은 글씨가 묶음의 공통 키워드입니다. 스토리 점수는
-      <i class="sw" style="background:var(--consume)"></i><b>소비</b> 네이버 언론사별 ‘많이 본 기사’에 이 사건 기사를 올린 언론사 수(<span id="sC"></span>)
-      <i class="sw" style="background:var(--publish)"></i><b>발행</b> 묶인 기사 수(<span id="sP"></span>)
-      <i class="sw" style="background:var(--search)"></i><b>검색</b> 구글 트렌드·네이트·줌 실시간 검색어와 맞물리는지(<span id="sS"></span>)
-      <i class="sw" style="background:var(--spike)"></i><b>급상승</b> 처음 등장 후 3시간 안이거나 직전보다 기사가 늘었는지(<span id="sK"></span>)를 더한 값입니다.</p>
-    <p><b>키워드</b>는 단어 단위 순위입니다. 점수는 <i class="sw" style="background:var(--search)"></i>검색(<span id="wS"></span>) <i class="sw" style="background:var(--publish)"></i>발행(<span id="wP"></span>) <i class="sw" style="background:var(--consume)"></i>소비(<span id="wC"></span>) <i class="sw" style="background:var(--spike)"></i>급상승(지난 7일 평균 대비, <span id="wK"></span>)의 합입니다. 키워드를 고르면 함께 등장한 <b>연관어</b>가 펼쳐지고, 연관어를 누르면 그 조합의 기사만 남기며 한 단계씩 파고들 수 있습니다. <b>관계망</b>은 주요 키워드만 워드클라우드처럼 펼쳐 둔 화면입니다. 글자에 마우스를 올리면 그 말과 함께 다뤄진 연관어들이 주변에 나타나고(클라우드에 없던 말도 포함), 관계된 키워드가 밝아지며 관련 기사가 뜹니다.</p>
-    <p><b>변동</b>은 직전 수집 대비 순위 이동, G·N·Z는 각각 구글 트렌드·네이트·줌에 올라 있다는 뜻입니다. 가중치는 <code>config.toml</code>에서 바꿀 수 있습니다.</p>
-    <p>수집은 매시 0분과 30분입니다. 화면은 1분마다 1KB짜리 목록 파일만 다시 읽어 새 수집이 있는지 확인하므로 출처 사이트에는 부담이 없습니다. 기사 말뭉치는 네이버 섹션 헤드라인, 연합뉴스 카테고리별 RSS, 구글 뉴스 주제별 피드(최근 24시간)이고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강합니다. 다음(Daum)은 2025년 개편으로 랭킹 페이지가 사라져 넣지 못했고, 연령·성별 분포는 무료로 믿을 만한 출처가 없어 표시하지 않습니다(지역은 구글 트렌드 시·도 피드, 세종은 구글이 지원하지 않음. 지도 경계는 Natural Earth 자료(퍼블릭 도메인)를 단순화한 것). 스토리 묶기와 키워드 추출은 형태소 분석기 없는 규칙 방식이라 가끔 어색한 라벨이 나올 수 있습니다.</p>
+    <dl class="defs">
+      <dt>스토리</dt>
+      <dd>같은 사건을 다룬 기사 묶음. 국면(고성·해명·반응)이 갈려도 앵커 키워드가 같으면 한 줄로 접음 → <b>국면 7</b> 표시, 상세에서 국면별로 볼 수 있음.</dd>
+
+      <dt>스토리 점수</dt>
+      <dd><span class="eq"><i class="sw" style="background:var(--consume)"></i>소비 <span id="sC"></span> + <i class="sw" style="background:var(--publish)"></i>발행 <span id="sP"></span> + <i class="sw" style="background:var(--search)"></i>검색 <span id="sS"></span> + <i class="sw" style="background:var(--spike)"></i>급상승 <span id="sK"></span></span>
+        <span class="note">소비 = ‘많이 본 기사’에 이 사건을 올린 언론사 수 · 발행 = 묶인 기사 수 · 검색 = 실시간 검색어와 맞물림 · 급상승 = 등장 3시간 내이거나 직전보다 기사 증가</span></dd>
+
+      <dt>키워드 점수</dt>
+      <dd><span class="eq"><i class="sw" style="background:var(--search)"></i>검색 <span id="wS"></span> + <i class="sw" style="background:var(--publish)"></i>발행 <span id="wP"></span> + <i class="sw" style="background:var(--consume)"></i>소비 <span id="wC"></span> + <i class="sw" style="background:var(--spike)"></i>급상승 <span id="wK"></span></span>
+        <span class="note">급상승은 지난 7일 평균 대비. 가중치는 <code>config.toml</code>에서 바꿀 수 있음</span></dd>
+
+      <dt>관계망</dt>
+      <dd>주요 키워드만 펼친 워드클라우드. 글자에 올리면 함께 다뤄진 말이 주변에 나타나고 관련 기사가 뜸.</dd>
+
+      <dt>표시</dt>
+      <dd>변동 = 직전 수집 대비 순위 이동 · <b>G·N·Z</b> = 구글 트렌드·네이트·줌에 올라 있음</dd>
+
+      <dt>수집</dt>
+      <dd>매시 <b>0분·30분</b>. 화면은 1분마다 1KB짜리 목록만 확인하므로 출처에 부담 없음.</dd>
+
+      <dt>출처</dt>
+      <dd>네이버 섹션·랭킹뉴스 · 연합뉴스 RSS · 구글 뉴스 피드/트렌드 · 네이트 · 줌 (최근 24시간). 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강.</dd>
+
+      <dt>빠진 것</dt>
+      <dd>다음(2025년 개편으로 랭킹 페이지 없음) · 연령·성별(무료로 믿을 만한 출처 없음) · 세종(구글 트렌드 미지원). 지도 경계는 Natural Earth(퍼블릭 도메인)를 단순화.</dd>
+
+      <dt>한계</dt>
+      <dd>형태소 분석기 없이 규칙으로 묶기 때문에 라벨이 가끔 어색함.</dd>
+    </dl>
     <p class="foot" id="foot"></p>
   </section>
+  <footer class="sig">수정·보완·개선 문의 — 지니메일 <b>passion@</b> · 내선 <b>0924</b></footer>
 </div>
 
 <script src="kr-map.js"></script>
