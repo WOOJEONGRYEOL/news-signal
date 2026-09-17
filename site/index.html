@@ -33,7 +33,7 @@
     }
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
     background:radial-gradient(38% 34% at 12% 8%, var(--blob1) 0%, transparent 70%),
                radial-gradient(34% 30% at 88% 6%, var(--blob2) 0%, transparent 70%),
@@ -73,8 +73,8 @@
   nav.tabs button{padding:4px 11px;font-size:12.5px;color:var(--muted);background:transparent;border:1px solid transparent}
   nav.tabs button:hover{background:var(--glass2)}
   nav.tabs button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
-  .grid{display:grid;grid-template-columns:minmax(380px,5fr) minmax(420px,7fr);gap:16px}
-  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  .grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px}
+  @media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
   .panel{padding:18px 20px}
   .panel h2{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;letter-spacing:-.01em}
   .panel h2 .sub{color:var(--muted);font-weight:400;font-size:12.5px}
@@ -121,7 +121,7 @@
   .chart .now{fill:var(--text)}
   .chartnote{color:var(--dim);font-size:12px;margin:2px 0 10px}
   ul.news{list-style:none;margin:0;padding:0}
-  ul.news li{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+  ul.news li{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--line)}
   ul.news .t{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums;padding-top:2px}
   ul.news .p{color:var(--muted);font-size:12px;margin-left:6px}
   ul.news .o{font-size:10.5px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
@@ -137,8 +137,8 @@
   .crumbs b{color:var(--text)}
   .crumbs button{padding:2px 10px;font-size:12px;background:var(--glass2);border:1px solid var(--glass-border)}
   /* 관계망(워드클라우드 + 호버 시 중앙 확대) */
-  .netgrid{display:grid;grid-template-columns:minmax(500px,8fr) minmax(320px,4fr);gap:16px}
-  @media (max-width:980px){.netgrid{grid-template-columns:1fr}}
+  .netgrid{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,4fr);gap:16px}
+  @media (max-width:980px){.netgrid{grid-template-columns:minmax(0,1fr)}}
   .net{width:100%;height:640px;display:block;border-radius:16px;background:var(--glass2);cursor:grab;touch-action:none}
   .net.drag{cursor:grabbing}
   .net #netLinks line{stroke:var(--accent);stroke-opacity:.5;stroke-width:1.6}
@@ -158,17 +158,17 @@
   .nethelp i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-block:-1px;vertical-align:-1px}
   .side h2{font-size:18px;letter-spacing:-.02em}
   .side .cat{font-size:12px;color:#fff;padding:2px 9px;border-radius:999px;font-weight:600}
-  .portals{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px}
-  @media (max-width:1200px){.portals{grid-template-columns:repeat(2,1fr)}}
-  @media (max-width:640px){.portals{grid-template-columns:1fr}}
+  .portals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:16px}
+  @media (max-width:1200px){.portals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){.portals{grid-template-columns:minmax(0,1fr)}}
   ol.plist{margin:0;padding:0;list-style:none}
-  ol.plist li{display:flex;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
+  ol.plist li{display:flex;gap:5px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
   ol.plist .n{color:var(--dim);width:18px;text-align:right;font-variant-numeric:tabular-nums;flex:none}
   ol.plist .k{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  ol.plist .m{color:var(--muted);font-size:12px;white-space:nowrap}
+  ol.plist .m{color:var(--muted);font-size:12px;white-space:nowrap;flex:none}
   ol.plist .k.link{cursor:pointer}
-  .regions{display:grid;grid-template-columns:minmax(300px,2fr) minmax(280px,3fr);gap:16px;margin-top:16px}
-  @media (max-width:980px){.regions{grid-template-columns:1fr}}
+  .regions{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:16px;margin-top:16px}
+  @media (max-width:980px){.regions{grid-template-columns:minmax(0,1fr)}}
   #krmapwrap{position:relative}
   .krtip{position:absolute;right:6px;top:2px;max-width:60%;text-align:right;pointer-events:none;line-height:1.45}
   .krtip b{font-size:15px}
@@ -1023,6 +1023,7 @@
     if(h.get("pin")) S.pin = h.get("pin");
     if(h.get("region")) S.region = h.get("region");
     if(["24","48","72"].includes(h.get("range"))) S.rangeH = +h.get("range");
+    if(["home","top"].includes(h.get("nv"))) S.nvMode = h.get("nv");
     if(h.has("noanim")) document.documentElement.classList.add("noanim");
   }
   function syncHash(){
@@ -1032,6 +1033,7 @@
     if(S.mode==="map" && S.pin) p.set("pin", S.pin);
     if(S.region) p.set("region", S.region);
     if(S.rangeH !== 24) p.set("range", String(S.rangeH));
+    if(S.nvMode !== "home") p.set("nv", S.nvMode);
     if(location.hash.includes("noanim")) p.set("noanim", "1");
     history.replaceState(null, "", "#" + p.toString());
   }
