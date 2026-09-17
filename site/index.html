@@ -301,7 +301,7 @@
   </div>
 
   <div class="regions hidden" id="regionGrid">
-    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역에 마우스를 올리면 그 지역이 멈춰 보입니다</span><span class="touchhint">권역을 눌러 보세요</span></span></h2><div id="krmapwrap"><div id="krTip" class="krtip"></div><div id="krmap"></div></div>
+    <section class="glass panel"><h2>지역별 관심사 <span class="sub">구글 트렌드 · 시·도별 급상승 검색어 · <span class="hoverhint">권역을 누르면 그 지역이 고정되고, 지도 밖으로 나가면 다시 순환합니다</span><span class="touchhint">권역을 누르면 고정, 빈 곳을 누르면 순환</span></span></h2><div id="krmapwrap"><div id="krTip" class="krtip"></div><div id="krmap"></div></div>
       <div class="nethelp"><span><i style="background:rgba(240,165,42,.85)"></i>진할수록 그 지역에서만 뜨는 검색어가 많음</span><span><i style="background:rgba(10,122,255,.25)"></i>전국 목록과 같은 지역</span><span><i style="background:rgba(120,130,150,.25)"></i>세종은 구글 트렌드 미지원</span></div></section>
     <section class="glass panel" id="regionDetail"></section>
   </div>
@@ -981,7 +981,7 @@
   // 경기(KR-41)는 도(道)라서 여기 들어가면 안 된다 — 들어가면 순환이 지날 때 그 안의 서울·인천을 덮어 버린다
   const CITY_ON_TOP = ["KR-28","KR-11","KR-50","KR-30","KR-29","KR-27","KR-31","KR-26"];
   const ROTATION = ["KR-11","KR-28","KR-41","KR-42","KR-43","KR-44","KR-30","KR-45","KR-29","KR-46","KR-47","KR-27","KR-31","KR-48","KR-26","KR-49"];
-  const CYCLE_MS = 4500, RESUME_MS = 8000;   // 순환 간격 / 지도를 벗어난 뒤 순환이 다시 돌기까지
+  const CYCLE_MS = 4500, RESUME_MS = 700;   // 순환 간격 / 지도를 벗어난 뒤 순환이 다시 돌기까지
   function cycleList(){ const R = (S.view||{}).regions||{}; return ROTATION.filter(c => (R[c]||[]).length); }
   function cycleStep(){
     const list = cycleList(); if(!list.length) return;
@@ -1021,20 +1021,16 @@
         el.onclick = ev => { ev.stopPropagation(); S.region = (S.region===code) ? null : code; svg.querySelectorAll("path").forEach(p2 => p2.classList.toggle("pinned", p2.dataset.code===S.region)); if(S.region){ stopCycle(); popRegion(code); renderRegionSide(code); } else { regionHover = null; startCycle(); } syncHash(); };
       });
       svg.onclick = () => { S.region = null; svg.querySelectorAll("path").forEach(p2 => p2.classList.remove("pinned")); syncHash(); regionHover = null; startCycle(); };
-      svg.onmouseleave = () => { regionHover = null; };   // 순환 재개는 아래 영역 전체에서 판단한다
-      // 지도에서 순위 패널로 커서를 옮겨 읽는 동안에도 순환이 다시 돌면 읽던 내용이 사라진다.
-      // 그래서 '지역별 관심사' 영역을 완전히 벗어난 뒤 몇 초가 지나야 다시 돈다.
-      const wrap = svg.closest(".regions");
-      if(wrap){
-        wrap.onmouseenter = () => clearTimeout(regionLeaveTimer);
-        wrap.onmouseleave = () => {
-          regionHover = null;
-          clearTimeout(regionLeaveTimer);
-          regionLeaveTimer = setTimeout(() => {
-            if(S.region){ popRegion(S.region); renderRegionSide(S.region); } else startCycle();
-          }, RESUME_MS);
-        };
-      }
+      // 지도 위에서는 올린 권역을 보여 주고, 커서가 지도를 벗어나면 다시 순환한다.
+      // 계속 보고 싶으면 눌러서 고정하면 된다(고정 중에는 순환하지 않음).
+      svg.onmouseenter = () => clearTimeout(regionLeaveTimer);
+      svg.onmouseleave = () => {
+        regionHover = null;
+        clearTimeout(regionLeaveTimer);
+        regionLeaveTimer = setTimeout(() => {
+          if(S.region){ popRegion(S.region); renderRegionSide(S.region); } else startCycle();
+        }, RESUME_MS);
+      };
     }
     $("krSvg").querySelectorAll("path").forEach(el => { const code = el.dataset.code; el.style.fill = regionFill(R[code]||[], code); el.classList.toggle("pinned", code===S.region); });
     if(S.region && !M.regions[S.region]) S.region = null;
@@ -1066,7 +1062,7 @@
     const v = S.view, names = v.region_names||S.manifest.region_names||{}, R = v.regions||{}, el = $("regionDetail");
     if(!code){
       const rows = Object.entries(R).map(([c, items]) => ({c, name:names[c]||c, loc:items.filter(i => !i.nat && i.n<=3).length, top:items[0]})).sort((a,b) => b.loc - a.loc || (a.name>b.name?1:-1)).slice(0,6);
-      el.innerHTML = `<div class="rtitle"><h2>지역별 급상승 검색어</h2><span class="rnum"><span class="hoverhint">권역에 마우스를 올리면 순위가 펼쳐집니다</span><span class="touchhint">권역을 누르면 순위가 펼쳐집니다</span></span></div>
+      el.innerHTML = `<div class="rtitle"><h2>지역별 급상승 검색어</h2><span class="rnum"><span class="hoverhint">권역을 누르면 고정됩니다</span><span class="touchhint">권역을 누르면 고정됩니다</span></span></div>
         <p class="narr" style="color:var(--muted)">지금 그 지역에서만 뜨는 검색어가 많은 곳입니다. 지역 뉴스 발굴 후보로 보세요.</p>
         <ol class="plist unfold">${rows.map((r,i) => `<li style="animation-delay:${i*40}ms"><span class="n"></span><span class="k link" data-region="${r.c}"><b>${esc(r.name)}</b> <span style="color:var(--muted)">· 1위 ${esc(r.top?r.top.k:"-")}</span></span><span class="m">이 지역만 ${r.loc}개</span></li>`).join("")}</ol>`;
       el.querySelectorAll("[data-region]").forEach(x => x.onclick = () => { S.region = x.dataset.region; renderRegions(); syncHash(); });
