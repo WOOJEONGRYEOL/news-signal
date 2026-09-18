@@ -26,7 +26,18 @@ python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 - 매 회차 끝에 `newssignal compact` 로 최근 3개 스냅샷만 남겨 캐시를 가볍게(약 17MB) 유지합니다. 흐름 그래프는 `site/data` 의 날짜별 JSON 을 읽으므로 옛 스냅샷이 없어도 됩니다.
 - Actions 토큰으로 만든 커밋은 다른 워크플로를 깨우지 않아서, 배포를 `pages.yml` 에 맡기지 않고 수집 워크플로 안에서 직접 합니다.
 
-**맥은 받아오기 담당입니다.** LaunchAgent `com.woo.newssignal` 이 30분마다 `scripts/run_auto.sh` 를 돌려 원격을 받아 옵니다(로컬 대시보드도 최신이 됨). 클라우드가 75분 넘게 밀렸을 때만 이 맥이 대신 수집해 밀어 넣습니다.
+**맥은 받아오기와 자명종 담당입니다.** LaunchAgent `com.woo.newssignal` 이 30분마다 `scripts/run_auto.sh` 를 돌립니다.
+
+- 원격을 받아 옵니다(로컬 대시보드도 최신이 됨).
+- 25분 넘게 새 수집이 없으면 클라우드 수집을 깨웁니다(`gh workflow run`). GitHub 예약 실행은 실제로 2~5시간씩 거르기 때문에, 맥이 켜져 있는 동안은 맥이 30분 간격을 지켜 줍니다. 맥이 꺼져 있으면 클라우드 예약만으로 돕니다.
+- 90분 넘게 밀렸거나 클라우드를 깨울 수 없을 때만 이 맥이 직접 수집해 올립니다.
+
+**데이터를 쓰는 곳은 하나(클라우드)로 둡니다.** 2026-09-18 02:00 에 맥과 클라우드가 같은 분에 수집해 같은 JSON 을 고쳤고, git 의 줄 단위 병합이 충돌한 채 맥 저장소가 멈춰 12시간 동안 맥의 수집분이 올라가지 못했습니다. 그래서:
+
+- 맥은 평소 직접 쓰지 않고 클라우드를 깨우기만 합니다 → 두 곳이 동시에 쓸 일이 거의 없습니다.
+- 그래도 충돌하면(맥 대체 수집 중 클라우드도 돈 경우) git 병합을 쓰지 않고, 클라우드 파일 위에 맥 데이터베이스의 최근 이틀을 프로그램이 시각별로 다시 합쳐 씁니다. 데이터가 아닌 파일이 충돌하면 되돌리고 손대지 않습니다.
+- 회차 시작 때 이전 회차가 남긴 rebase/merge 중간 상태가 있으면 먼저 치웁니다. 저장소가 멈춘 채로 남지 않습니다.
+- `manifest.json` 의 시점 목록은 기존 파일과 합칩니다(클라우드 DB 는 최근 3회차만 남겨서, DB 만 보고 쓰면 지난 날짜가 시점 목록에서 사라졌습니다).
 
 ```bash
 launchctl list | grep com.woo.newssignal        # 상태
@@ -34,6 +45,7 @@ bash scripts/install_launchagent.sh              # 재등록
 gh workflow run collect.yml -f mode=doctor       # 러너에서 출처 연결만 점검
 gh workflow run collect.yml -f mode=collect      # 클라우드 수집 즉시 1회
 python3 -m newssignal collect                    # 이 맥에서 직접 수집
+python3 -m newssignal build --days 2             # DB 의 최근 이틀을 site/data 에 다시 합쳐 쓰기
 ```
 
 ### 멈추지 않게 하는 장치
