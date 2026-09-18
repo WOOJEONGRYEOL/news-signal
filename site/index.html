@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>뉴스 시그널</title>
+<title>News 시그널</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="News Signal">
-<meta property="og:title" content="뉴스 시그널">
+<meta property="og:title" content="News 시그널">
 <meta property="og:description" content="포털·언론 실시간 관심사 보드">
 <meta property="og:image" content="icon.png">
 <style>
@@ -51,7 +51,7 @@
   .brand{display:flex;align-items:baseline;gap:10px}
   .brand h1{margin:0;font-size:24px;letter-spacing:-.03em;font-weight:800}
   /* 로고 뒤 심박 파형 — 6초에 한 번, 파형이 지나가고 꼭짓점에서 전파 고리가 퍼진다 */
-  /* 로고 뒤 심박: 글자 밑을 지나는 심전도선이 두 단어 사이에서 치솟고, 꼭짓점에서 전파가 퍼진다 (5초마다 한 번) */
+  /* 로고 뒤 심박: 글자 밑을 지나는 심전도선이 News 와 시그널 사이에서 치솟고, 꼭짓점에서 전파가 퍼진다 (5초마다 한 번) */
   .logo{position:relative;display:inline-block;padding:2px 4px;white-space:nowrap}
   .logo .logotext{position:relative;z-index:1}
   .pulse{position:absolute;left:-.333em;top:-.417em;width:6.25em;height:2.5em;overflow:visible;z-index:0;pointer-events:none}
@@ -67,10 +67,10 @@
     0%{stroke-dashoffset:24;opacity:0} 3%{opacity:1} 30%{opacity:1}
     34%{stroke-dashoffset:-100;opacity:0} 100%{stroke-dashoffset:-100;opacity:0}}
   @keyframes ecgPing{
-    0%,12%{transform:scale(.3);opacity:0} 13.5%{transform:scale(.6);opacity:.9}
-    38%{transform:scale(3.4);opacity:0} 100%{transform:scale(3.4);opacity:0}}
+    0%,13.3%{transform:scale(.3);opacity:0} 14.8%{transform:scale(.6);opacity:.9}
+    39%{transform:scale(3.4);opacity:0} 100%{transform:scale(3.4);opacity:0}}
   @keyframes ecgGlow{
-    0%,12.5%{text-shadow:none} 16.5%{text-shadow:0 0 14px var(--accent)} 34%,100%{text-shadow:none}}
+    0%,13.8%{text-shadow:none} 18%{text-shadow:0 0 14px var(--accent)} 35%,100%{text-shadow:none}}
   @media (prefers-reduced-motion: reduce){
     .pulse .ecg-trace,.pulse .ping,.logo b{animation:none}
   }
@@ -160,6 +160,8 @@
   ul.news .o{font-size:10.5px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
   ul.news .rp{font-size:10.5px;color:var(--consume);border:1px solid rgba(208,85,159,.35);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
   ul.news li.dimmed{opacity:.3}
+  ul.news li[hidden]{display:none}
+  .newsmore{display:block;margin:6px 0 4px}
   .ring{width:100%;height:250px;display:block}
   .ring text{cursor:pointer;fill:var(--text)}
   .ring text:hover{fill:var(--accent)}
@@ -295,10 +297,10 @@
   <header>
     <div class="brand"><h1 class="logo"><svg class="pulse" viewBox="0 0 150 60" aria-hidden="true">
         <defs><linearGradient id="ecgFade"><stop offset="0" style="stop-color:var(--accent);stop-opacity:0"/><stop offset=".12" style="stop-color:var(--accent)"/><stop offset=".8" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>
-        <path class="ecg-base" pathLength="100" d="M0 44 H44 L47 39 L50 50 L54 4 L58 54 L61 44 H122"/>
-        <path class="ecg-trace" pathLength="100" d="M0 44 H44 L47 39 L50 50 L54 4 L58 54 L61 44 H122"/>
-        <circle class="ping p1" cx="54" cy="4" r="5"/><circle class="ping p2" cx="54" cy="4" r="5"/>
-      </svg><span class="logotext">뉴스 <b>시그널</b></span></h1><small>포털·언론 실시간 관심사</small></div>
+        <path class="ecg-base" pathLength="100" d="M0 44 H66 L69 39 L72 50 L75.5 4 L79.5 54 L82.5 44 H144"/>
+        <path class="ecg-trace" pathLength="100" d="M0 44 H66 L69 39 L72 50 L75.5 4 L79.5 54 L82.5 44 H144"/>
+        <circle class="ping p1" cx="75.5" cy="4" r="5"/><circle class="ping p2" cx="75.5" cy="4" r="5"/>
+      </svg><span class="logotext">News <b>시그널</b></span></h1><small>포털·언론 실시간 관심사</small></div>
     <div class="status" id="status"><span class="live"></span>불러오는 중…</div>
     <div class="timectl">
       <label>시점</label>
@@ -415,7 +417,7 @@
   ];
   const $ = id => document.getElementById(id);
   const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
-  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, subsOpen:false, catPrev:null, path:[], filterKw:null,
+  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, subsOpen:false, newsOpen:null, catPrev:null, path:[], filterKw:null,
               rangeH:24, viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
   async function getJSON(path){
@@ -573,6 +575,35 @@
     spikeKw: "30분마다 쌓은 자체 이력 — 지난 7일 평균 대비 몇 배",
   };
   const newsLi = (a, dim) => `<li class="${dim?"dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${(a.rp||[]).length ? `<span class="rp">많이 본 · ${a.rp.length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`;
+  // 기사 목록은 왼쪽 순위 카드의 아래 끝까지만 펼친다. 나머지는 '펼쳐보기' — 목록이 길면 아래 포털 순위가 한참 밀려난다.
+  // 한 칸 화면(980px 이하)에서는 카드가 위아래로 놓이므로 8건까지만.
+  const NEWS_MIN = 5, NEWS_NARROW = 8;
+  function fitNews(key){
+    const el = $("detail"), ul = el.querySelector("ul.news"); if(!ul) return;
+    const lis = [...ul.children];
+    el.querySelectorAll(".newsmore").forEach(b => b.remove());
+    lis.forEach(li => li.hidden = false);
+    if(lis.length <= NEWS_MIN) return;
+    let keep;
+    if(window.matchMedia("(max-width: 980px)").matches) keep = NEWS_NARROW;
+    else {
+      const table = $("listPanel").querySelector("table");
+      const leftBottom = table.getBoundingClientRect().bottom + 18;           // 왼쪽 카드 내용의 끝(아래 여백 포함)
+      const tail = el.lastElementChild.getBoundingClientRect().bottom - ul.getBoundingClientRect().bottom + 18; // 목록 아래(국면 등)+여백. 패널은 늘어나 있을 수 있어 내용 끝으로 잰다
+      const limit = leftBottom - tail - 38;                                   // 38 = 펼쳐보기 버튼 자리
+      keep = lis.findIndex(li => li.getBoundingClientRect().bottom > limit);
+      keep = keep < 0 ? lis.length : Math.max(NEWS_MIN, keep);
+    }
+    const rest = lis.length - keep;
+    if(rest <= 0) return;
+    const open = S.newsOpen === key;
+    if(!open) lis.slice(keep).forEach(li => li.hidden = true);
+    const b = document.createElement("button");
+    b.className = "pill submore newsmore";
+    b.textContent = open ? "기사 접기" : `나머지 ${rest}건 펼쳐보기`;
+    b.onclick = () => { S.newsOpen = open ? null : key; fitNews(key); if(open) ul.scrollIntoView({block:"nearest"}); };
+    ul.after(b);
+  }
 
   // ---------- 스토리 ----------
   function storySegs(o){
@@ -612,6 +643,7 @@
       <h2 style="font-size:15px">이 국면의 기사 <span class="sub">${arts.length}건</span></h2>
       ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, false)).join("")}</ul>` : `<div class="empty">저장된 기사가 없습니다.</div>`}`;
     $("subBack").onclick = () => { S.sub = null; renderStoryDetail(); };
+    fitNews("sub:" + sb.id);
   }
   async function renderStoryDetail(){
     const v = S.view, o = (v.stories[S.cat]||[]).find(x => x.id===S.story), el = $("detail");
@@ -635,7 +667,7 @@
       <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
-      ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}
+      ${arts.length ? `<ul class="news">${(fk ? [...shown, ...arts.filter(a => !shown.includes(a))] : arts).map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}
       ${(o.subs&&o.subs.length) ? (() => {
         // 국면 목록은 기사 목록 아래에 둔다. 기본 4줄만 펼치고 나머지는 '더 보기'.
         const SHOW = 4, more = o.subs.length - SHOW, list = S.subsOpen ? o.subs : o.subs.slice(0, SHOW);
@@ -647,7 +679,9 @@
     el.querySelectorAll("[data-sub]").forEach(x => x.onclick = () => { S.sub = x.dataset.sub; renderStoryDetail(); });
     const sm = $("subMore"); if(sm) sm.onclick = () => { S.subsOpen = !S.subsOpen; renderStoryDetail(); };
     bindRange(el, renderStoryDetail);
+    fitNews("story:" + o.id);
     try { drawChart(await series(o.iid || o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
+    fitNews("story:" + o.id);
   }
 
   // ---------- 키워드 ----------
@@ -707,11 +741,13 @@
       <div class="charthead"><span>관심도 흐름 (종합점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <h2 style="margin-top:14px">관련 기사 <span class="sub">${filters.length ? `‘${esc(S.path.map(p=>p.d).join(" + "))}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 최신순`}</span></h2>
-      ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, filters.length && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 관련 기사가 없습니다.</div>`}`;
+      ${arts.length ? `<ul class="news">${(filters.length ? [...shown, ...arts.filter(a => !shown.includes(a))] : arts).map(a => newsLi(a, filters.length && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 관련 기사가 없습니다.</div>`}`;
     if(rel.length) drawRing(focusD, rel);
     const reset = $("crumbReset"); if(reset) reset.onclick = () => { S.path=[]; renderDetail(); };
     bindRange(el, renderDetail);
+    fitNews("kw:" + o.k);
     try { drawChart(await series(o.k, S.cat, "keyword"), "키워드"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
+    fitNews("kw:" + o.k);
   }
   function drawRing(centerLabel, rel){
     const narrow = isNarrow(), W = narrow ? 420 : 640, H = narrow ? 300 : 250, cx=W/2, cy=H/2, R=Math.min(W,H)/2 - (narrow ? 34 : 40);
@@ -1149,7 +1185,8 @@
 
   window.addEventListener("error", e => { const d = $("err"); if(d) d.innerHTML += `<div class="err">스크립트 오류: ${esc(e.message)} (${esc((e.filename||"").split("/").pop())}:${e.lineno})</div>`; });
   let resizeTimer = null, wasNarrow = isNarrow();
-  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if(isNarrow()!==wasNarrow){ wasNarrow = isNarrow(); S.graph = null; if(S.mode==="map") renderMain(); else if(S.mode==="keyword") renderDetail(); } }, 200); });
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => {
+    if(S.mode==="story") fitNews(S.sub ? "sub:" + S.sub : "story:" + S.story); else if(S.mode==="keyword") fitNews("kw:" + S.kw); if(isNarrow()!==wasNarrow){ wasNarrow = isNarrow(); S.graph = null; if(S.mode==="map") renderMain(); else if(S.mode==="keyword") renderDetail(); } }, 200); });
   applyHash();
   loadLive().catch(showErr);
 })();
