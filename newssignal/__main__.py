@@ -58,8 +58,9 @@ def cmd_collect(cfg, args) -> int:
 
 def cmd_build(cfg, args) -> int:
     store = Store(cfg.db_path)
-    export_all(cfg, store)
-    print("site/data 재생성 완료:", ", ".join(store.snapshot_dates()) or "(스냅샷 없음)")
+    dates = store.snapshot_dates()[-args.days:] if args.days else store.snapshot_dates()
+    export_all(cfg, store, dates=dates)
+    print("site/data 재생성 완료:", ", ".join(dates) or "(스냅샷 없음)")
     return 0
 
 
@@ -135,7 +136,8 @@ def main(argv=None) -> int:
     c = sub.add_parser("collect", help="지금 한 번 수집하고 site/data 갱신")
     c.add_argument("--no-search", action="store_true", help="구글 뉴스 검색 보강 생략")
     c.add_argument("-v", "--verbose", action="store_true")
-    sub.add_parser("build", help="DB에서 site/data 전부 다시 생성")
+    b = sub.add_parser("build", help="DB에서 site/data 다시 생성(기존 파일과 합침)")
+    b.add_argument("--days", type=int, default=0, help="최근 N일만 (기본: 전부)")
     s = sub.add_parser("serve", help="로컬 웹서버로 대시보드 열기")
     s.add_argument("--port", type=int, default=8770)
     s.add_argument("--host", default="127.0.0.1")

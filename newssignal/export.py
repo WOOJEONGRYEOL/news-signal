@@ -84,12 +84,23 @@ def export_day(cfg: Config, store: Store, date: str) -> None:
 
 
 def export_manifest(cfg: Config, store: Store) -> None:
+    """시각 목록은 이미 올라가 있는 manifest 와 합친다.
+
+    클라우드는 데이터베이스를 최근 몇 회차만 남기고 줄이므로(compact) DB 만 보고 쓰면 지난 날짜가
+    시점 목록에서 사라지고, 맥과 클라우드가 서로 기록한 시각을 지우게 된다.
+    """
+    path = cfg.site_dir / "data" / "manifest.json"
+    old = _read(path)
+    old = old if isinstance(old, dict) else {}
+    days = {d: set(v) for d, v in (old.get("days") or {}).items() if isinstance(v, list)}
+    for d in store.snapshot_dates():
+        days.setdefault(d, set()).update(s["ts"] for s in store.snapshots_on(d))
     latest = store.latest_snapshot()
-    days = {d: [s["ts"] for s in store.snapshots_on(d)] for d in store.snapshot_dates()}
-    _write(cfg.site_dir / "data" / "manifest.json", {
+    latest_ts = max(filter(None, (latest["ts"] if latest else None, old.get("latest"))), default=None)
+    _write(path, {
         "generated": now_kst().isoformat(timespec="minutes"),
-        "latest": latest["ts"] if latest else None,
-        "days": days,
+        "latest": latest_ts,
+        "days": {d: sorted(days[d]) for d in sorted(days)},
         "home_press": cfg.home_press,
         "weights": cfg.weights,
         "story_weights": cfg.story_weights,
