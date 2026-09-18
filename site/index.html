@@ -50,6 +50,30 @@
   header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;padding:10px 6px 16px}
   .brand{display:flex;align-items:baseline;gap:10px}
   .brand h1{margin:0;font-size:24px;letter-spacing:-.03em;font-weight:800}
+  /* 로고 뒤 심박 파형 — 6초에 한 번, 파형이 지나가고 꼭짓점에서 전파 고리가 퍼진다 */
+  /* 로고 뒤 심박: 글자 밑을 지나는 심전도선이 두 단어 사이에서 치솟고, 꼭짓점에서 전파가 퍼진다 (5초마다 한 번) */
+  .logo{position:relative;display:inline-block;padding:2px 4px;white-space:nowrap}
+  .logo .logotext{position:relative;z-index:1}
+  .pulse{position:absolute;left:-.333em;top:-.417em;width:6.25em;height:2.5em;overflow:visible;z-index:0;pointer-events:none}
+  .pulse path{fill:none;stroke:var(--accent);stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+  .pulse .ecg-base{stroke:url(#ecgFade);stroke-width:1.2;opacity:.16}
+  .pulse .ecg-trace{stroke-width:2.2;stroke-dasharray:24 200;stroke-dashoffset:24;opacity:0;
+    filter:drop-shadow(0 0 3px var(--accent));animation:ecgTrace 5s linear infinite}
+  .pulse .ping{fill:none;stroke:var(--accent);stroke-width:1.5;opacity:0;transform-box:fill-box;transform-origin:center;
+    vector-effect:non-scaling-stroke;animation:ecgPing 5s ease-out infinite}
+  .pulse .p2{animation-delay:.25s}
+  .logo b{animation:ecgGlow 5s ease-out infinite}
+  @keyframes ecgTrace{
+    0%{stroke-dashoffset:24;opacity:0} 3%{opacity:1} 30%{opacity:1}
+    34%{stroke-dashoffset:-100;opacity:0} 100%{stroke-dashoffset:-100;opacity:0}}
+  @keyframes ecgPing{
+    0%,12%{transform:scale(.3);opacity:0} 13.5%{transform:scale(.6);opacity:.9}
+    38%{transform:scale(3.4);opacity:0} 100%{transform:scale(3.4);opacity:0}}
+  @keyframes ecgGlow{
+    0%,12.5%{text-shadow:none} 16.5%{text-shadow:0 0 14px var(--accent)} 34%,100%{text-shadow:none}}
+  @media (prefers-reduced-motion: reduce){
+    .pulse .ecg-trace,.pulse .ping,.logo b{animation:none}
+  }
   .brand h1 b{color:var(--accent)}
   .brand small{color:var(--muted)}
   .status{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
@@ -269,7 +293,12 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><h1>뉴스 <b>시그널</b></h1><small>포털·언론 실시간 관심사</small></div>
+    <div class="brand"><h1 class="logo"><svg class="pulse" viewBox="0 0 150 60" aria-hidden="true">
+        <defs><linearGradient id="ecgFade"><stop offset="0" style="stop-color:var(--accent);stop-opacity:0"/><stop offset=".12" style="stop-color:var(--accent)"/><stop offset=".8" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>
+        <path class="ecg-base" pathLength="100" d="M0 44 H44 L47 39 L50 50 L54 4 L58 54 L61 44 H122"/>
+        <path class="ecg-trace" pathLength="100" d="M0 44 H44 L47 39 L50 50 L54 4 L58 54 L61 44 H122"/>
+        <circle class="ping p1" cx="54" cy="4" r="5"/><circle class="ping p2" cx="54" cy="4" r="5"/>
+      </svg><span class="logotext">뉴스 <b>시그널</b></span></h1><small>포털·언론 실시간 관심사</small></div>
     <div class="status" id="status"><span class="live"></span>불러오는 중…</div>
     <div class="timectl">
       <label>시점</label>
