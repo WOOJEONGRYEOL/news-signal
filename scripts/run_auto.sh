@@ -16,6 +16,12 @@
 # 띄우지 않아 수집이 통째로 멈춘다. 그래서 연결을 먼저 확인하고, 하드 타임아웃으로도 한 번 더 막는다.
 cd "$(dirname "$0")/.." || exit 1
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+# 배터리로 잠자는 중에는 launchd 가 깨어나는 순간(다크웨이크, 2초)에 이 스크립트를 띄운다.
+# 그 사이 다시 잠들지 않도록 caffeinate 로 감싼다.
+if [ -z "$NS_AWAKE" ] && [ -x /usr/bin/caffeinate ]; then
+  export NS_AWAKE=1
+  exec /usr/bin/caffeinate -s "$0" "$@"
+fi
 mkdir -p logs
 exec >> logs/collect.log 2>&1
 echo "=== $(date '+%F %T') ==="
@@ -90,8 +96,15 @@ except Exception:
 PY
 }
 
-if ! python3 -c "import sys; from newssignal.fetch import online; sys.exit(0 if online() else 1)"; then
-  echo "네트워크 없음 — 건너뜁니다"
+# 잠에서 막 깨어난 직후에는 Wi-Fi 가 아직 붙지 않아 한 번의 확인으로는 '망 없음'이 된다.
+# 2026-09-21 오전, 맥이 자는 동안 이것 때문에 6시간 넘게 클라우드를 깨우지 못했다. 최대 1분 기다린다.
+ONLINE=0
+for i in 1 2 3 4 5; do
+  if python3 -c "import sys; from newssignal.fetch import online; sys.exit(0 if online() else 1)"; then ONLINE=1; break; fi
+  [ "$i" -lt 5 ] && sleep 12
+done
+if [ "$ONLINE" != 1 ]; then
+  echo "네트워크 없음(1분 대기 후에도) — 건너뜁니다"
   exit 0
 fi
 
