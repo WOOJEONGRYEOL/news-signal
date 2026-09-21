@@ -6,9 +6,8 @@
 # 멈춰 이후 12시간 동안 맥의 수집분을 하나도 올리지 못했다.
 #
 #  1) 원격의 최신 결과를 받아 온다.
-#  2) 25분 넘게 새 수집이 없으면 클라우드 수집을 깨운다(gh workflow run).
-#     GitHub 예약 실행은 몇 시간씩 거르므로, 맥이 켜져 있는 동안은 맥이 자명종 역할을 한다.
-#  3) 90분 넘게 밀렸거나 클라우드를 깨울 수 없을 때만 이 맥이 직접 수집해 올린다.
+#  2) 평소 30분 간격은 클라우드가 스스로 잇는다(collect.yml 의 relay). 40분 넘게 밀리면 맥이 깨운다.
+#  3) 120분 넘게 밀렸거나 클라우드를 깨울 수 없을 때만 이 맥이 직접 수집해 올린다.
 #     올리다 충돌하면 git 의 줄 단위 병합 대신 클라우드 파일 위에 이 맥의 데이터베이스를 다시 합쳐 쓴다.
 #  4) 어떤 경우에도 저장소를 rebase 도중 상태로 남기지 않는다.
 #
@@ -26,8 +25,8 @@ mkdir -p logs
 exec >> logs/collect.log 2>&1
 echo "=== $(date '+%F %T') ==="
 
-WAKE_AFTER=${NEWSSIGNAL_WAKE_AFTER:-25}   # 이만큼(분) 밀리면 클라우드를 깨운다
-SELF_AFTER=${NEWSSIGNAL_SELF_AFTER:-90}   # 이만큼(분) 밀리면 맥이 직접 수집한다
+WAKE_AFTER=${NEWSSIGNAL_WAKE_AFTER:-40}   # 이만큼(분) 밀리면 클라우드를 깨운다(클라우드 이어달리기가 늦을 때만)
+SELF_AFTER=${NEWSSIGNAL_SELF_AFTER:-120}  # 이만큼(분) 밀리면 맥이 직접 수집한다
 
 rebasing() { [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; }
 

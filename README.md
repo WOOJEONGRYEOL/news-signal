@@ -20,7 +20,10 @@ python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 
 ## 자동 수집과 공유 (2026-09-16 구조 변경)
 
-**수집은 GitHub Actions 가 맡습니다.** 맥이 꺼져 있어도 매시 0분·30분에 돌고, 결과를 `site/data` 에 커밋한 뒤 같은 워크플로에서 Pages 로 배포합니다(`.github/workflows/collect.yml`).
+**수집은 GitHub Actions 가 맡습니다.** 맥이 꺼져 있어도 30분마다 돌고, 결과를 `site/data` 에 커밋한 뒤 같은 워크플로에서 Pages 로 배포합니다(`.github/workflows/collect.yml`).
+
+- 30분 간격은 **이어달리기(relay)** 로 만듭니다. 한 회차가 끝나면 25분 기다렸다가 다음 회차를 깨웁니다(`workflow_dispatch` 는 Actions 토큰으로도 새 회차를 만들 수 있는 예외입니다). GitHub 예약 실행은 15분마다 걸어 두어도 실제로는 하루 5~7번(간격 중앙값 3시간)만 돌기 때문입니다. 예약(`*/30`)은 사슬이 끊겼을 때 다시 잇는 예비용입니다.
+- 최근 25분 안에 수집한 기록이 있으면 그 회차는 수집을 건너뜁니다(이어달리기·예약·맥 요청이 겹쳐도 중복 수집이 없습니다). 그래도 바로 수집하려면 `-f force=true`.
 
 - 회차 사이 상태(급상승 기준선·이슈 연속성)는 Actions 캐시로 잇습니다. 캐시가 비어 있으면 저장소의 `data/seed.sqlite3.gz` 로 시작합니다.
 - 매 회차 끝에 `newssignal compact` 로 최근 3개 스냅샷만 남겨 캐시를 가볍게(약 17MB) 유지합니다. 흐름 그래프는 `site/data` 의 날짜별 JSON 을 읽으므로 옛 스냅샷이 없어도 됩니다.
@@ -29,8 +32,9 @@ python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 **맥은 받아오기와 자명종 담당입니다.** LaunchAgent `com.woo.newssignal` 이 30분마다 `scripts/run_auto.sh` 를 돌립니다.
 
 - 원격을 받아 옵니다(로컬 대시보드도 최신이 됨).
-- 25분 넘게 새 수집이 없으면 클라우드 수집을 깨웁니다(`gh workflow run`). GitHub 예약 실행은 실제로 2~5시간씩 거르기 때문에, 맥이 켜져 있는 동안은 맥이 30분 간격을 지켜 줍니다. 맥이 꺼져 있으면 클라우드 예약만으로 돕니다.
-- 90분 넘게 밀렸거나 클라우드를 깨울 수 없을 때만 이 맥이 직접 수집해 올립니다.
+- 40분 넘게 새 수집이 없으면(=클라우드 이어달리기가 늦으면) 클라우드 수집을 깨웁니다(`gh workflow run`).
+- 120분 넘게 밀렸거나 클라우드를 깨울 수 없을 때만 이 맥이 직접 수집해 올립니다.
+- 배터리로 자는 동안 launchd 는 맥이 잠깐 깨는 순간에 스크립트를 띄우는데, 그때는 Wi-Fi 가 아직 붙기 전입니다. 연결 확인을 최대 1분 기다리고, 도는 동안에는 `caffeinate` 로 다시 잠들지 않게 합니다(2026-09-21 오전 이것 때문에 6시간 공백).
 
 **데이터를 쓰는 곳은 하나(클라우드)로 둡니다.** 2026-09-18 02:00 에 맥과 클라우드가 같은 분에 수집해 같은 JSON 을 고쳤고, git 의 줄 단위 병합이 충돌한 채 맥 저장소가 멈춰 12시간 동안 맥의 수집분이 올라가지 못했습니다. 그래서:
 
@@ -43,7 +47,7 @@ python3 -m newssignal serve       # http://127.0.0.1:8770/ 에서 보기
 launchctl list | grep com.woo.newssignal        # 상태
 bash scripts/install_launchagent.sh              # 재등록
 gh workflow run collect.yml -f mode=doctor       # 러너에서 출처 연결만 점검
-gh workflow run collect.yml -f mode=collect      # 클라우드 수집 즉시 1회
+gh workflow run collect.yml -f mode=collect -f force=true   # 클라우드 수집 즉시 1회
 python3 -m newssignal collect                    # 이 맥에서 직접 수집
 python3 -m newssignal build --days 2             # DB 의 최근 이틀을 site/data 에 다시 합쳐 쓰기
 ```

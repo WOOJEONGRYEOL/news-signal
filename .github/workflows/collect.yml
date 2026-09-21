@@ -5,9 +5,9 @@ name: Collect
 
 on:
   schedule:
-    # GitHub 예약은 부하에 따라 늦거나 아예 건너뛴다(실제로 5시간 반 동안 한 번만 돌았다).
-    # 그래서 15분마다 깨우고, 최근 수집이 25분 이내면 바로 건너뛴다 → 실질 30분 간격.
-    - cron: "*/15 * * * *"
+    # 예비용. GitHub 예약은 부하에 따라 늦거나 거른다(실제로 하루 5~7번만 돈다).
+    # 평소 30분 간격은 아래 relay(이어달리기)가 만든다. 예약은 그 사슬이 끊겼을 때 다시 잇는 역할.
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -15,6 +15,10 @@ on:
         default: collect
         type: choice
         options: [collect, doctor]
+      force:
+        description: "최근 수집이 있어도 그냥 수집"
+        default: false
+        type: boolean
 
 concurrency:
   group: collect
@@ -55,7 +59,7 @@ jobs:
           PY
           )
           echo "마지막 수집: ${AGE}분 전"
-          if [ "${{ github.event_name }}" != "schedule" ] || [ "$AGE" -gt 25 ]; then
+          if [ "${{ inputs.force }}" = "true" ] || [ "$AGE" -gt 25 ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"; echo "아직 최신이라 건너뜁니다"
@@ -109,6 +113,24 @@ jobs:
             sleep 5
           done
           echo "푸시 실패"; exit 1
+
+  # 이어달리기: 이 회차가 끝나고 25분 뒤에 다음 회차를 깨운다.
+  # GitHub 예약은 몇 시간씩 거르지만, workflow_dispatch 는 Actions 토큰으로도 새 회차를 만들 수 있다.
+  # 사슬이 끊기면(취소·실패) 위의 예약이 다시 이어 준다.
+  relay:
+    needs: run
+    if: ${{ always() && inputs.mode != 'doctor' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      actions: write
+    steps:
+      - name: 다음 회차까지 대기
+        run: sleep 1500
+      - name: 다음 회차 깨우기
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run collect.yml --repo "$GITHUB_REPOSITORY" --ref main -f mode=collect
 
   # Actions 토큰으로 만든 커밋은 다른 워크플로(pages.yml)를 깨우지 않는다. 그래서 여기서 직접 배포한다.
   deploy:
