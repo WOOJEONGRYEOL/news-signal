@@ -385,7 +385,7 @@
       <dd>변동 = 직전 수집 대비 순위 이동 · <b>G·N·Z</b> = 구글 트렌드·네이트·줌에 올라 있음</dd>
 
       <dt>수집</dt>
-      <dd>매시 <b>0분·30분</b>. 화면은 1분마다 1KB짜리 목록만 확인하므로 출처에 부담 없음.</dd>
+      <dd><b>30분 간격</b>. 화면은 1분마다 1KB짜리 목록만 확인하므로 출처에 부담 없음.</dd>
 
       <dt>출처</dt>
       <dd>위 <b>신호</b> 표 참고. 기사는 최근 24시간치만 쓰고, 관련 기사가 적은 키워드는 구글 뉴스 검색으로 보강함.</dd>
@@ -504,7 +504,7 @@
   function renderAll(){
     $("err").innerHTML = "";
     const v = S.view, live = v.isLive;
-    $("status").innerHTML = `<span class="live ${live?"":"off"}"></span>${live?"실시간":"과거 시점"} · 수집 <b>${fmtTs(v.ts)}</b>` + (live ? ` · 매시 0분·30분 수집` : "");
+    $("status").innerHTML = `<span class="live ${live?"":"off"}"></span>${live?"실시간":"과거 시점"} · 수집 <b>${fmtTs(v.ts)}</b>` + (live ? ` · 30분마다 수집` : "");
     $("nowBtn").classList.toggle("on", live);
     if(!live){ $("daySel").value = v.ts.slice(0,10); fillTimes(v.ts.slice(0,10)); $("timeSel").value = v.ts; }
     const W = v.weights || S.manifest.weights || {}, SW = v.story_weights || S.manifest.story_weights || {};
@@ -1021,7 +1021,7 @@
       <text class="peaklbl" x="${Math.min(Wd-R-90, Math.max(L, x(peak.t)-30)).toFixed(1)}" y="${Math.max(12, y(peak.s)-9).toFixed(1)}">최고 ${peak.s.toFixed(1)} · ${fmtTs(peak.ts)}</text>
       <circle class="now" cx="${x(last.t).toFixed(1)}" cy="${y(last.s).toFixed(1)}" r="3"/>
       ${ticks.join("")}${hov}</svg>
-      <div class="chartnote">점은 수집 시각(매시 0분·30분), 0점은 그 시각 ${what} Top ${S.manifest.keep_n||20} 밖. 점선은 자정. 최고점은 이슈가 가장 뜨거웠던 때입니다.</div>`;
+      <div class="chartnote">점은 수집 시각(30분 간격), 0점은 그 시각 ${what} Top ${S.manifest.keep_n||20} 밖. 점선은 자정. 최고점은 이슈가 가장 뜨거웠던 때입니다.</div>`;
   }
 
   // ---------- 포털 원본 ----------
