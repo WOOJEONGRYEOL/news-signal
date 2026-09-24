@@ -116,6 +116,9 @@
   .meta .lb{color:var(--text);opacity:.75}
   .delta{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .delta.up{color:var(--up)} .delta.down{color:var(--down)} .delta.new{color:var(--accent);font-weight:700} .delta.same{color:var(--dim)}
+  /* 막대 자체는 overflow:hidden 이라 말풍선(::after)이 잘린다. 겉을 감싼 칸에 말풍선을 붙이고,
+     6px 막대는 겨누기 어려우니 위아래 여백까지 포함해 올리면 뜨게 한다. */
+  .barwrap{display:block;padding:7px 0;margin:-7px 0}
   .bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--line);min-width:80px}
   /* 브라우저 기본 툴팁은 1초쯤 늦게 떠서 답답하다. 올리는 즉시 뜨는 말풍선으로 대신한다. */
   .tipwrap{position:relative}
@@ -563,7 +566,7 @@
     return `<span class="delta same">–</span>`;
   }
   const srcHtml = s => `<span class="src">${[...(s||"")].map(c => `<b class="${c}">${c}</b>`).join("")}</span>`;
-  const barHtml = (g, title) => `<div class="bar tipwrap" data-tip="${esc(title)}">${["c","p","s","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("")}</div>`;
+  const barHtml = (g, title) => `<div class="barwrap tipwrap" data-tip="${esc(title)}"><div class="bar">${["c","p","s","k"].map(k => `<i class="${k}" style="width:${(g[k]*100).toFixed(1)}%"></i>`).join("")}</div></div>`;
   const RANGES = [24, 48, 72];
   const rangeSeg = () => `<div class="seg rangeseg">${RANGES.map(h => `<button data-h="${h}" class="${S.rangeH===h?"on":""}">${h}시간</button>`).join("")}</div>`;
   const bindRange = (el, rerender) => el.querySelectorAll(".rangeseg button").forEach(b => b.onclick = () => { S.rangeH = +b.dataset.h; rerender(); });
