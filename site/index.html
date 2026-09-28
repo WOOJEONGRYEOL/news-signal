@@ -163,6 +163,16 @@
   ul.news .o{font-size:10.5px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
   ul.news .rp{font-size:10.5px;color:var(--consume);border:1px solid rgba(208,85,159,.35);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:1px}
   ul.news li.dimmed{opacity:.3}
+  ul.news .ph{font-size:10.5px;color:var(--muted);margin-left:6px;white-space:nowrap}
+  ul.news .ph i,.phrep i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:1px}
+  .phnote{color:var(--muted);font-size:12.5px;margin:-6px 0 8px}
+  .chips.phases{margin-bottom:8px}
+  .chip.phc{cursor:pointer;color:var(--text)}
+  .chip.phc:hover{border-color:var(--accent)}
+  .chip.phc.on{border-color:var(--text);background:var(--glass-hi);font-weight:700}
+  .chip.phc small{opacity:.6;margin-left:4px}
+  .phrep{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+  .phrep a{color:var(--text);font-weight:600;margin-left:4px}
   ul.news li[hidden]{display:none}
   .newsmore{display:block;margin:6px 0 4px}
   .ring{width:100%;height:250px;display:block}
@@ -363,7 +373,7 @@
     <h2>읽는 법</h2>
     <dl class="defs">
       <dt>스토리</dt>
-      <dd>같은 사건을 다룬 기사 묶음. 국면(고성·해명·반응)이 갈려도 앵커 키워드가 같으면 한 줄로 접음 → <b>국면 7</b> 표시, 상세에서 국면별로 볼 수 있음.</dd>
+      <dd>같은 사건을 다룬 기사 묶음. 같은 사건이 여러 갈래(국면)로 나뉘어 보도돼도 핵심 키워드가 같으면 한 줄로 접음 → <b>국면 7</b> 표시. 상세의 기사 목록에서 국면을 색으로 구분하고, 눌러서 그 국면만 볼 수 있음.</dd>
 
       <dt>스토리 점수</dt>
       <dd><span class="eq"><i class="sw" style="background:var(--consume)"></i>소비 <span id="sC"></span> + <i class="sw" style="background:var(--publish)"></i>발행 <span id="sP"></span> + <i class="sw" style="background:var(--search)"></i>검색 <span id="sS"></span> + <i class="sw" style="background:var(--spike)"></i>급상승 <span id="sK"></span></span>
@@ -420,7 +430,7 @@
   ];
   const $ = id => document.getElementById(id);
   const isNarrow = () => window.matchMedia("(max-width: 700px)").matches;
-  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, sub:null, subsOpen:false, newsOpen:null, catPrev:null, path:[], filterKw:null,
+  const S = { manifest:null, latest:null, view:null, mode:"story", cat:"전체", kw:null, story:null, phase:null, newsOpen:null, catPrev:null, path:[], filterKw:null,
               rangeH:24, viewTs:null, region:null, nvMode:"home", days:{}, extras:{}, arts:{}, pin:null, hover:null, graph:null };
 
   async function getJSON(path){
@@ -545,7 +555,7 @@
       $("rankHead").innerHTML = `<tr><th class="num">#</th><th>대표 기사 · 공통 키워드</th><th>변동</th><th class="colbar">신호</th><th style="text-align:right">점수</th></tr>`;
       renderStoryList();
       const rows = S.view.stories[S.cat]||[];
-      if(S.story && !rows.some(o => o.id===S.story)){ S.story = null; S.sub = null; S.subsOpen = false; }
+      if(S.story && !rows.some(o => o.id===S.story)){ S.story = null; S.phase = null; }
       if(!S.story && rows[0]) S.story = rows[0].id;
       renderStoryDetail();
     } else {
@@ -577,7 +587,7 @@
     spikeStory: "30분마다 쌓은 자체 이력 — 등장 3시간 내이거나 직전 수집보다 기사 증가",
     spikeKw: "30분마다 쌓은 자체 이력 — 지난 7일 평균 대비 몇 배",
   };
-  const newsLi = (a, dim) => `<li class="${dim?"dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${(a.rp||[]).length ? `<span class="rp">많이 본 · ${a.rp.length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`;
+  const newsLi = (a, dim, ph) => `<li class="${dim?"dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${ph ? `<span class="ph"><i style="background:${ph.c}"></i>${esc(ph.name)}</span>` : ""}${(a.rp||[]).length ? `<span class="rp">많이 본 · ${a.rp.length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`;
   // 기사 목록은 왼쪽 순위 카드의 아래 끝까지만 펼친다. 나머지는 '펼쳐보기' — 목록이 길면 아래 포털 순위가 한참 밀려난다.
   // 한 칸 화면(980px 이하)에서는 카드가 위아래로 놓이므로 8건까지만.
   const NEWS_MIN = 5, NEWS_NARROW = 8;
@@ -622,12 +632,24 @@
     $("rankBody").innerHTML = rows.map(o => `<tr class="row ${o.id===S.story?"sel":""}" data-id="${esc(o.id)}"><td class="num">${o.r}</td>
       <td><div class="hl">${esc(o.title)}</div><div class="meta"><span class="lb">${esc(o.ld)}</span><span>· 기사 ${o.n}건 · 언론사 ${o.outlets}곳</span>${(o.subs&&o.subs.length) ? `<span class="tag issue">국면 ${o.subs.length+1}</span>` : ""}${o.src?srcHtml(o.src):""}</div></td>
       <td>${deltaHtml(o.d)}</td><td class="colbar">${barHtml(storySegs(o), `소비 ${o.outlets}곳 · 발행 ${o.n}건 · 검색 ${o.search} · 급상승 ${o.spike}`)}</td><td class="score">${o.s.toFixed(1)}</td></tr>`).join("");
-    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; S.sub = null; S.subsOpen = false; renderStoryList(); renderStoryDetail(); });
+    $("rankBody").querySelectorAll("tr.row").forEach(tr => tr.onclick = () => { S.story = tr.dataset.id; S.filterKw = null; S.phase = null; renderStoryList(); renderStoryDetail(); });
+  }
+  // 국면을 대표하는 말: 기사가 많은 국면부터, 이 스토리 라벨에 이미 있는 말(=묶은 기준)은 빼고 최대 3개.
+  // 예전에는 '고성·해명처럼'이라는 고정 예시가 모든 스토리에 붙어 오해를 불렀다.
+  const PHASE_JUNK = /(\d|부터|까지|에서|에게|으로|하는|했다|한다|된다|연다|없다|있다|을까|할까|나올까|해)$/;
+  function phaseWords(o){
+    const own = new Set((o.ld||"").split(/\s*·\s*|\s+/).filter(Boolean)), used = new Set(), out = [];
+    for(const sb of [...(o.subs||[])].sort((a, b) => b.n - a.n)){
+      const w = (sb.ld||"").split(/\s*·\s*/).find(x => { const t = x.split(/\s+/); return x.length>1 && !PHASE_JUNK.test(x) && !t.some(y => own.has(y) || used.has(y)); });
+      if(w){ out.push(w); w.split(/\s+/).forEach(y => used.add(y)); }
+      if(out.length===3) break;
+    }
+    return out;
   }
   function storyNarrative(o){
     const p = [];
     p.push(`이 사건은 지금 기사 ${o.n}건으로 다뤄지고 있습니다.`);
-    if(o.subs && o.subs.length) p.push(`고성·해명처럼 ${o.subs.length+1}개 국면으로 나뉘어 보도되고 있어, 순위에는 한 줄로 묶어 올렸습니다.`);
+    if(o.subs && o.subs.length){ const eg = phaseWords(o); p.push(`${eg.length ? `‘${eg.join("’·‘")}’ 등 ` : ""}${o.subs.length+1}개 국면으로 나뉘어 보도되고 있어, 순위에는 한 줄로 묶어 올렸습니다.`); }
     if(o.outlets>=5) p.push(`언론사 ${o.outlets}곳의 ‘많이 본 기사’에 올라 있어, 수용자가 실제로 가장 많이 읽는 뉴스에 속합니다.`);
     else if(o.outlets>0) p.push(`언론사 ${o.outlets}곳의 ‘많이 본 기사’에도 올라 실제로 읽히고 있습니다.`);
     else p.push(`아직 ‘많이 본 기사’에는 오르지 않았습니다. 발행은 되지만 소비는 확인되지 않은 단계입니다.`);
@@ -638,23 +660,44 @@
     else if(typeof o.d==="number" && o.d<0) p.push(`직전 수집보다 ${-o.d}계단 내려왔습니다.`);
     return p.join(" ");
   }
-  function renderSubDetail(parent, sb){
-    const v = S.view, el = $("detail"), arts = (v.story_articles||{})[sb.id]||[];
-    el.innerHTML = `<div class="crumbs"><button id="subBack">← 이슈 전체로</button><span>${esc(parent.title.length>34 ? parent.title.slice(0,34)+"…" : parent.title)}</span></div>
-      <h2><a href="${esc(sb.url||"#")}" target="_blank" rel="noopener">${esc(sb.title)}</a> <span class="sub">${esc(sb.ld)} · 기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></h2>
-      <p class="narr" style="color:var(--muted)">이 이슈 안의 한 국면입니다. 순위에는 이슈 전체로 한 번만 반영됩니다.</p>
-      <h2 style="font-size:15px">이 국면의 기사 <span class="sub">${arts.length}건</span></h2>
-      ${arts.length ? `<ul class="news">${arts.map(a => newsLi(a, false)).join("")}</ul>` : `<div class="empty">저장된 기사가 없습니다.</div>`}`;
-    $("subBack").onclick = () => { S.sub = null; renderStoryDetail(); };
-    fitNews("sub:" + sb.id);
+  // ---------- 국면: 한 이슈 안의 갈래 ----------
+  // 이슈 = 핵심어(앵커)를 함께 가진 스토리들. '묶인 기사'는 모든 국면의 합집합이라, 국면을 색으로 표시하고
+  // 눌러서 거르게 한다. 예전에는 합집합 목록과 국면 목록이 따로 있어 둘이 뭐가 다른지 알기 어려웠다.
+  const PHASE_COLORS = ["#0a7aff","#e8590c","#2f9e44","#ae3ec9","#d6336c","#1098ad","#f08c00","#5c7cfa","#66a80f","#868e96"];
+  const phaseColor = i => PHASE_COLORS[i % PHASE_COLORS.length];
+  function buildPhases(o, arts){
+    const SA = S.view.story_articles || {};
+    const anc = o.iid && !o.iid.startsWith("s:") ? o.iid : "";
+    const ancT = new Set(anc.toLowerCase().split(/\s+/).filter(Boolean));
+    // 국면 이름 = 그 국면 라벨에서 핵심어·조각말·앞 국면이 이미 쓴 말을 뺀 2개. 남는 게 없으면 대표 제목 앞부분.
+    const used = new Set();
+    const name = (ld, title) => {
+      const w = (ld||"").split(/\s*·\s*/).filter(x => { const t = x.toLowerCase().split(/\s+/); return x.length>1 && !PHASE_JUNK.test(x) && !t.some(y => ancT.has(y) || used.has(y)); }).slice(0, 2);
+      w.forEach(x => x.toLowerCase().split(/\s+/).forEach(y => used.add(y)));
+      return w.length ? w.join(" · ") : (title||"").replace(/^\[[^\]]*\]\s*/, "").slice(0, 14) + "…";
+    };
+    const list = [{id:o.id, name:name(o.ld, o.title), title:o.title, url:o.url, press:o.press},
+                  ...(o.subs||[]).map(sb => ({id:sb.id, name:name(sb.ld, sb.title), title:sb.title, url:sb.url, press:sb.press, own:SA[sb.id]||[]}))];
+    const of = new Map();
+    list.forEach((ph, i) => { if(i) ph.own.forEach(a => { if(!of.has(a.u)) of.set(a.u, i); }); });
+    arts.forEach(a => { if(!of.has(a.u)) of.set(a.u, 0); });
+    list[0].own = arts.filter(a => of.get(a.u) === 0);
+    list.forEach(ph => ph.n = ph.own.length);
+    return {anc, list, of};
   }
   async function renderStoryDetail(){
     const v = S.view, o = (v.stories[S.cat]||[]).find(x => x.id===S.story), el = $("detail");
     if(!o){ el.innerHTML = `<div class="empty">왼쪽 목록에서 스토리를 누르면 흐름과 묶인 기사가 나옵니다.</div>`; return; }
-    if(S.sub){ const sb = (o.subs||[]).find(x => x.id===S.sub); if(sb) return renderSubDetail(o, sb); S.sub = null; }
     const arts = (v.story_articles||{})[o.id]||[];
+    const P = (o.subs && o.subs.length) ? buildPhases(o, arts) : null;
+    if(!P || (S.phase && !P.list.some(ph => ph.id===S.phase))) S.phase = null;
+    const phIdx = P && S.phase ? P.list.findIndex(ph => ph.id===S.phase) : -1;
+    const pool = phIdx >= 0 ? P.list[phIdx].own : arts;          // 국면을 고르면 그 국면 기사만
     const fk = S.filterKw;
-    const shown = fk ? arts.filter(a => a.t.toLowerCase().includes(fk.toLowerCase())) : arts;
+    const shown = fk ? pool.filter(a => a.t.toLowerCase().includes(fk.toLowerCase())) : pool;
+    const tagOf = P && phIdx < 0 ? a => { const i = P.of.get(a.u) ?? 0; return {c:phaseColor(i), name:P.list[i].name}; } : null;
+    const nkey = `story:${o.id}:${S.phase||""}:${fk||""}`;
+    const cnt = fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / ${pool.length}건` : phIdx >= 0 ? `이 국면 ${pool.length}건 · 이슈 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`;
     el.innerHTML = `
       <h2><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.title)}</a> <span class="pt">${o.s.toFixed(1)}점</span> <span class="sub">${S.cat} ${o.r}위 ${deltaHtml(o.d)} · 대표 기사 ${esc(o.press)}</span></h2>
       <p class="narr">${esc(storyNarrative(o))}</p>
@@ -669,22 +712,17 @@
       </div>
       <div class="charthead"><span>관심도 흐름 (스토리 점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
-      <h2 style="margin-top:14px">묶인 기사 <span class="sub">${fk ? `‘${esc(fk)}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 많이 본 기사 먼저`}</span></h2>
-      ${arts.length ? `<ul class="news">${(fk ? [...shown, ...arts.filter(a => !shown.includes(a))] : arts).map(a => newsLi(a, fk && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}
-      ${(o.subs&&o.subs.length) ? (() => {
-        // 국면 목록은 기사 목록 아래에 둔다. 기본 4줄만 펼치고 나머지는 '더 보기'.
-        const SHOW = 4, more = o.subs.length - SHOW, list = S.subsOpen ? o.subs : o.subs.slice(0, SHOW);
-        return `<h2 style="font-size:15px">이 이슈의 다른 국면 <span class="sub">${o.subs.length}건 · 누르면 그 국면의 기사만 봅니다</span></h2>
-      <ol class="plist subs">${list.map(sb => `<li><span class="n"></span><span class="k link" data-sub="${esc(sb.id)}">${esc(sb.title)}<span style="color:var(--muted)"> · ${esc(sb.ld)}</span></span><span class="m">기사 ${sb.n}건 · 언론사 ${sb.outlets}곳</span></li>`).join("")}</ol>
-      ${more > 0 ? `<button class="pill submore" id="subMore">${S.subsOpen ? "국면 접기" : `국면 ${more}건 더 보기`}</button>` : ""}`;
-      })() : ""}`;
+      <h2 style="margin-top:14px">묶인 기사 <span class="sub">${cnt}</span></h2>
+      ${P ? `<p class="phnote">${P.anc ? `‘${esc(P.anc)}’가 모든 국면의 핵심어라 한 이슈로 묶었습니다.` : `같은 사건으로 보여 한 이슈로 묶었습니다.`} 색은 국면(같은 사건 안에서 다룬 갈래)이고, 누르면 그 국면 기사만 봅니다.</p>
+      <div class="chips phases"><span class="chip phc ${phIdx<0?"on":""}" data-ph="">전체<small>${arts.length}</small></span>${P.list.map((ph, i) => ph.n ? `<span class="chip phc ${phIdx===i?"on":""}" data-ph="${esc(ph.id)}" title="${esc(ph.title)}"><i style="background:${phaseColor(i)}"></i>${esc(ph.name)}<small>${ph.n}</small></span>` : "").join("")}</div>
+      ${phIdx >= 0 ? `<p class="phrep"><i style="background:${phaseColor(phIdx)}"></i>이 국면 대표 기사 <a href="${esc(P.list[phIdx].url||"#")}" target="_blank" rel="noopener">${esc(P.list[phIdx].title)}</a> <span>${esc(P.list[phIdx].press||"")}</span></p>` : ""}` : ""}
+      ${pool.length ? `<ul class="news">${(fk ? [...shown, ...pool.filter(a => !shown.includes(a))] : pool).map(a => newsLi(a, fk && !shown.includes(a), tagOf && tagOf(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 기사가 없습니다.</div>`}`;
     $("storyChips").querySelectorAll(".chip.k").forEach(c => c.onclick = () => { S.filterKw = c.dataset.k || null; renderStoryDetail(); });
-    el.querySelectorAll("[data-sub]").forEach(x => x.onclick = () => { S.sub = x.dataset.sub; renderStoryDetail(); });
-    const sm = $("subMore"); if(sm) sm.onclick = () => { S.subsOpen = !S.subsOpen; renderStoryDetail(); };
+    el.querySelectorAll(".chip.phc").forEach(c => c.onclick = () => { S.phase = c.dataset.ph || null; renderStoryDetail(); });
     bindRange(el, renderStoryDetail);
-    fitNews("story:" + o.id);
+    fitNews(nkey);
     try { drawChart(await series(o.iid || o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
-    fitNews("story:" + o.id);
+    fitNews(nkey);
   }
 
   // ---------- 키워드 ----------
@@ -1193,7 +1231,7 @@
   window.addEventListener("error", e => { const d = $("err"); if(d) d.innerHTML += `<div class="err">스크립트 오류: ${esc(e.message)} (${esc((e.filename||"").split("/").pop())}:${e.lineno})</div>`; });
   let resizeTimer = null, wasNarrow = isNarrow();
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => {
-    if(S.mode==="story") fitNews(S.sub ? "sub:" + S.sub : "story:" + S.story); else if(S.mode==="keyword") fitNews("kw:" + S.kw); if(isNarrow()!==wasNarrow){ wasNarrow = isNarrow(); S.graph = null; if(S.mode==="map") renderMain(); else if(S.mode==="keyword") renderDetail(); } }, 200); });
+    if(S.mode==="story") fitNews(`story:${S.story}:${S.phase||""}:${S.filterKw||""}`); else if(S.mode==="keyword") fitNews("kw:" + S.kw); if(isNarrow()!==wasNarrow){ wasNarrow = isNarrow(); S.graph = null; if(S.mode==="map") renderMain(); else if(S.mode==="keyword") renderDetail(); } }, 200); });
   applyHash();
   loadLive().catch(showErr);
 })();
