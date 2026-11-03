@@ -770,11 +770,13 @@
         <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.spikeKw)}"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
-      <h2 style="font-size:15px">연관어 <span class="sub">함께 등장한 말 · 누르면 그 조합으로 파고듭니다</span></h2>
-      <div class="crumbs" id="crumbs"><b>${esc(o.kd||o.k)}</b>${S.path.map((p,i) => ` › <b>${esc(p.d)}</b>`).join("")}${S.path.length ? ` <button id="crumbReset">처음으로</button>` : ""}</div>
-      <div id="ring">${rel.length ? "" : `<div class="chartnote">‘${esc(focusD)}’와 함께 자주 등장한 말이 아직 없습니다.</div>`}</div>
       <div class="charthead"><span>관심도 흐름 (종합점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
+      <!-- 흐름 그래프를 항상 먼저 둔다. 연관어가 없는 키워드는 고리 자리가 한 줄로 줄어 그래프가 위로 올라와
+           키워드마다 순서가 달라 보였다. 스토리 상세(그래프 → 기사)와도 순서를 맞춘다. -->
+      <h2 style="font-size:15px;margin-top:14px">연관어 <span class="sub">함께 등장한 말 · 누르면 그 조합으로 파고듭니다</span></h2>
+      <div class="crumbs" id="crumbs"><b>${esc(o.kd||o.k)}</b>${S.path.map((p,i) => ` › <b>${esc(p.d)}</b>`).join("")}${S.path.length ? ` <button id="crumbReset">처음으로</button>` : ""}</div>
+      <div id="ring">${rel.length ? "" : `<div class="chartnote">‘${esc(focusD)}’와 함께 자주 등장한 말이 아직 없습니다. 관련 기사가 적거나 검색어로만 뜬 키워드입니다.</div>`}</div>
       <h2 style="margin-top:14px">관련 기사 <span class="sub">${filters.length ? `‘${esc(S.path.map(p=>p.d).join(" + "))}’ 포함 ${shown.length}건 / 전체 ${arts.length}건` : `${arts.length}건 · 최신순`}</span></h2>
       ${arts.length ? `<ul class="news">${(filters.length ? [...shown, ...arts.filter(a => !shown.includes(a))] : arts).map(a => newsLi(a, filters.length && !shown.includes(a))).join("")}</ul>` : `<div class="empty">이 시점에 저장된 관련 기사가 없습니다.</div>`}`;
     if(rel.length) drawRing(focusD, rel);
