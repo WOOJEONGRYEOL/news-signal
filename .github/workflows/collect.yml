@@ -117,20 +117,41 @@ jobs:
   # 이어달리기: 이 회차가 끝나고 25분 뒤에 다음 회차를 깨운다.
   # GitHub 예약은 몇 시간씩 거르지만, workflow_dispatch 는 Actions 토큰으로도 새 회차를 만들 수 있다.
   # 사슬이 끊기면(취소·실패) 위의 예약이 다시 이어 준다.
+  #
+  # 회의 시각 맞춤: 10시·14시·16시(KST) 회의 전에 새 결과가 올라가 있도록, 다음 회차가 9:47·13:47·15:47 에
+  # 시작되게 대기 시간을 늘이거나 줄인다. 깨운 뒤 배포까지 약 4분이라 9:51·13:51·15:51 쯤 화면에 반영된다.
+  # 맞춤 시각까지 35분 이내면 그 시각으로 바로 맞춰(간격 25~35분) 직전 회차와 몇 분 차로 몰려 찍히지 않게 한다.
   relay:
     needs: run
     if: ${{ always() && inputs.mode != 'doctor' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     permissions:
       actions: write
     steps:
-      - name: 다음 회차까지 대기
-        run: sleep 1500
+      - name: 다음 회차 시각 정하기
+        id: plan
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime, timedelta, timezone
+          KST = timezone(timedelta(hours=9))
+          GAP, SLACK, LEAD = 25 * 60, 10 * 60, 13          # 기본 간격 · 맞춤 허용 폭 · 회의 몇 분 전에 시작할지
+          now = datetime.now(KST)
+          slots = [(now + timedelta(days=d)).replace(hour=h, minute=0, second=0, microsecond=0) - timedelta(minutes=LEAD)
+                   for d in (0, 1) for h in (10, 14, 16)]
+          nxt = min((t for t in slots if (t - now).total_seconds() >= 60), default=None)
+          wait = (nxt - now).total_seconds() if nxt else None
+          if wait is not None and wait <= GAP + SLACK:
+              print(f"sleep={int(wait)}"); print("force=true"); print(f"why=회의 전 맞춤 {nxt:%H:%M}")
+          else:
+              print(f"sleep={GAP}"); print("force=false"); print("why=기본 25분")
+          PY
+      - name: 다음 회차까지 대기 (${{ steps.plan.outputs.why }})
+        run: sleep ${{ steps.plan.outputs.sleep }}
       - name: 다음 회차 깨우기
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run collect.yml --repo "$GITHUB_REPOSITORY" --ref main -f mode=collect
+        run: gh workflow run collect.yml --repo "$GITHUB_REPOSITORY" --ref main -f mode=collect -f force=${{ steps.plan.outputs.force }}
 
   # Actions 토큰으로 만든 커밋은 다른 워크플로(pages.yml)를 깨우지 않는다. 그래서 여기서 직접 배포한다.
   deploy:
