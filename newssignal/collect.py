@@ -14,6 +14,7 @@ from .sources import google_news, google_trends, nate, naver, yna, zum
 from .sources.google_trends import REGIONS
 from .store import Store
 from .stories import build_stories, group_issues, related_keywords
+from . import threads
 
 CATEGORIES = ["전체", "정치", "경제", "사회", "생활/문화", "세계", "IT/과학", "스포츠", "연예"]
 SOURCE_LABEL = {"google": "G", "nate": "N", "zum": "Z"}
@@ -358,11 +359,24 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                     merged.append(a)
             merged.sort(key=lambda a: -len(a["rp"]))
             story_articles[lead.id] = merged[:40]
+    # 회차를 건너 같은 사건을 잇는 흐름 번호(tid). 흐름 그래프·순위 변동·처음 등장 시각이 이것으로 이어진다.
+    # (이슈 앵커나 스토리 id 는 회차마다 쉽게 바뀌어 그래프가 끊겼다 — threads.py 참고)
+    T = threads.from_files(cfg.site_dir / "data", ts)
+    tid_of = T.assign([{"id": it["mem"][0].id, "anc": "" if it["iid"].startswith("s:") else it["iid"],
+                        "urls": set().union(*(m.urls for m in it["mem"]))} for it in issues])
     for cat, rows in stories.items():
         pr = prev_story_ranks.get(cat, {})
         for i, row in enumerate(rows, 1):
             row["r"] = i
-            row["d"] = "new" if row["iid"] not in pr else pr[row["iid"]] - i
+            row["tid"] = tid_of.get(row["id"]) or threads.new_tid(row["id"])
+            first = T.first_seen(row["tid"])
+            if first and first < row["first"]:
+                row["first"] = first
+            p = T.prev_rank(cat, row["tid"])
+            if p is False:   # 공개된 앞 회차가 없으면(첫 수집 등) 예전 방식
+                row["d"] = "new" if row["iid"] not in pr else pr[row["iid"]] - i
+            else:
+                row["d"] = "new" if p is None else p - i
     focus = sorted({o["k"] for rows in categories.values() for o in rows})
     related = {kw: rel for kw, rel in related_keywords(everything, focus, stop).items() if rel}
     hop2 = sorted({k for rel in related.values() for k, _ in rel} - set(focus))

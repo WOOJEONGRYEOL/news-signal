@@ -27,9 +27,23 @@ def _merge_day(path: Path, fresh: dict) -> dict:
     if not isinstance(old, dict) or not isinstance(old.get("snapshots"), list):
         return fresh
     by_ts = {s.get("ts"): s for s in old["snapshots"] if isinstance(s, dict)}
+    for s in fresh["snapshots"]:
+        _keep_threads(by_ts.get(s["ts"]), s)
     by_ts.update({s["ts"]: s for s in fresh["snapshots"]})
     fresh["snapshots"] = [by_ts[t] for t in sorted(by_ts)]
     return fresh
+
+
+def _keep_threads(old: dict | None, new: dict) -> None:
+    """같은 회차를 다시 쓸 때, 새 줄에 흐름 번호(16번째 칸)가 비어 있으면 이미 있던 값을 지킨다.
+    (흐름 번호가 생기기 전에 저장된 회차를 데이터베이스에서 다시 내보내도 소급해 채운 값이 지워지지 않게)"""
+    if not isinstance(old, dict) or not old.get("stories") or not new.get("stories"):
+        return
+    for cat, rows in new["stories"].items():
+        had = {r[0]: r[16] for r in old["stories"].get(cat, []) if len(r) > 16 and r[16]}
+        for r in rows:
+            if len(r) > 16 and not r[16] and r[0] in had:
+                r[16] = had[r[0]]
 
 
 def _merge_articles(path: Path, fresh: dict) -> dict:
@@ -68,7 +82,8 @@ def export_day(cfg: Config, store: Store, date: str) -> None:
         cats = {cat: [[r["keyword"], r["rank"], r["score"], r["search"], r["publish"], r["consume"], r["sources"], r["spike"], r["display"]] for r in rows]
                 for cat, rows in store.ranks_for(s["id"], cfg.keep_n).items()}
         sts = {cat: [[r["story_id"], r["rank"], r["score"], r["label"], r["rep_title"], r["rep_url"], r["rep_press"], r["n_articles"],
-                      r["outlets"], r["search"], r["sources"], r["spike"], r["first_seen"], r["keywords"], r["issue"], r["subs"]] for r in rows]
+                      r["outlets"], r["search"], r["sources"], r["spike"], r["first_seen"], r["keywords"], r["issue"], r["subs"],
+                      r["thread"]] for r in rows]
                for cat, rows in store.stories_for(s["id"], cfg.keep_n).items()}
         day["snapshots"].append({"ts": s["ts"], "cats": cats, "stories": sts})
         extras["snapshots"].append({"ts": s["ts"], "portals": store.portal_items(s["id"]), "regions": store.regions(s["id"]),

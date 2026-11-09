@@ -468,9 +468,10 @@
       for(const o of rows) o.d = prev ? (o.k in pr ? pr[o.k]-o.r : "new") : null;
       categories[cat] = rows;
       const srows = ((snap.stories||{})[cat]||[]).map(a => { const label = safeJSON(a[3], []), kw = safeJSON(a[13], []);
-        return {id:a[0], r:a[1], s:a[2], label, ld:label.join(" · "), title:a[4], url:a[5], press:a[6], n:a[7], outlets:a[8], search:a[9], src:a[10]||"", spike:a[11]||0, first:a[12], kw, cat, iid:a[14]||a[0], subs:safeJSON(a[15], [])}; });
-      const ps = {}; if(prev) for(const a of ((prev.stories||{})[cat]||[])) ps[a[14]||a[0]]=a[1];
-      for(const o of srows) o.d = prev ? ((o.iid in ps) ? ps[o.iid]-o.r : "new") : null;
+        return {id:a[0], r:a[1], s:a[2], label, ld:label.join(" · "), title:a[4], url:a[5], press:a[6], n:a[7], outlets:a[8], search:a[9], src:a[10]||"", spike:a[11]||0, first:a[12], kw, cat, iid:a[14]||a[0], subs:safeJSON(a[15], []), tid:a[16]||""}; });
+      // 과거 시점의 변동도 흐름 번호로 비교(없으면 예전 키)
+      const pkey = a => a[16]||a[14]||a[0], ps = {}; if(prev) for(const a of ((prev.stories||{})[cat]||[])) ps[pkey(a)]=a[1];
+      for(const o of srows){ const k = o.tid||o.iid; o.d = prev ? ((k in ps) ? ps[k]-o.r : "new") : null; }
       stories[cat] = srows;
     }
     const ex = (extra.snapshots||[]).find(s => s.ts===ts) || {portals:{}, regions:{}, naver_ranking:[], related:{}};
@@ -715,7 +716,7 @@
     el.querySelectorAll(".chip.phc").forEach(c => c.onclick = () => { S.phase = c.dataset.ph || null; renderStoryDetail(); });
     bindRange(el, renderStoryDetail);
     fitNews(nkey);
-    try { drawChart(await series(o.iid || o.id, S.cat, "story"), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
+    try { drawChart(await series(o.tid || o.iid || o.id, S.cat, "story", !!o.tid), "스토리"); } catch(e){ $("chart").innerHTML = `<div class="chartnote">흐름을 불러오지 못했습니다 (${esc(e.message)})</div>`; }
     fitNews(nkey);
   }
 
@@ -1013,7 +1014,7 @@
   function narrativeFor(hit){ const saveCat = S.cat; S.cat = hit.cat; const t = narrative(hit.o); S.cat = saveCat; return t; }
 
   // ---------- 시계열 ----------
-  async function series(key, cat, kind){
+  async function series(key, cat, kind, byThread){
     const end = S.viewTs ? new Date(S.viewTs) : new Date(S.manifest.latest||Date.now());
     const hours = S.rangeH || 24;
     const start = new Date(end.getTime() - hours*3600*1000);
@@ -1023,7 +1024,8 @@
     const pts = [];
     for(const f of files) for(const s of f.snapshots){
       const t = new Date(s.ts); if(t<start || t>end) continue;
-      const row = kind==="story" ? ((s.stories||{})[cat]||[]).find(a => (a[14]||a[0])===key) : (s.cats[cat]||[]).find(a => a[0]===key);
+      // 스토리는 흐름 번호(16번째 칸, threads.py)로 잇는다. 번호가 없는 옛 화면 데이터면 예전 키(이슈 핵심어·스토리 id).
+      const row = kind==="story" ? ((s.stories||{})[cat]||[]).find(a => (byThread ? (a[16]||a[14]||a[0]) : (a[14]||a[0]))===key) : (s.cats[cat]||[]).find(a => a[0]===key);
       pts.push({ts:s.ts, t, s: row?row[2]:0, r: row?row[1]:null});
     }
     pts.sort((a,b)=>a.t-b.t);
