@@ -326,6 +326,29 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
         issues.append({"iid": iid, "mem": mem, "n": len(urls), "outlets": len(presses), "srcs": srcs,
                        "search": max(m.search for m in mem), "spike": max(m.spike for m in mem),
                        "first": min((m.first_seen for m in mem if m.first_seen), default=ts)})
+    # 회차를 건너 같은 사건을 잇는 흐름 번호(tid). 흐름 그래프·순위 변동·처음 등장 시각·급상승이 이것으로 이어진다.
+    # (이슈 앵커나 스토리 id 는 회차마다 쉽게 바뀌었다 — threads.py 참고)
+    T = threads.from_files(cfg.site_dir / "data", ts)
+    tid_of = T.assign([{"id": it["mem"][0].id, "anc": "" if it["iid"].startswith("s:") else it["iid"],
+                        "urls": set().union(*(m.urls for m in it["mem"]))} for it in issues])
+    now_dt = datetime.fromisoformat(ts)
+    for it in issues:
+        it["tid"] = tid_of.get(it["mem"][0].id) or threads.new_tid(it["mem"][0].id)
+        if not T.recent:          # 공개된 앞 회차가 없으면(첫 수집 등) 스토리 단위 급상승 그대로
+            continue
+        # 급상승을 흐름 기준으로 다시 잰다. 스토리 id 가 새로 붙었다고 '방금 나온 스토리' 가산점(3시간)을
+        # 주면, 몇 시간째 이어진 사건이 만점을 받아 순위에 끼어든다(2026-11-09 Top10 90줄 중 31줄).
+        first = T.first_seen(it["tid"])
+        if first and first < it["first"]:
+            it["first"] = first
+        try:
+            hours = (now_dt - datetime.fromisoformat(it["first"])).total_seconds() / 3600
+        except ValueError:
+            hours = 0.0
+        novelty = max(0.0, 1.0 - hours / 3.0) * (1.0 if it["n"] >= 3 else 0.5)
+        pn = T.prev_size(it["tid"])   # 증가: 이 흐름이 가장 최근에 보였을 때보다 기사가 늘었나
+        growth = 0.0 if pn is None else min(1.0, max(0.0, it["n"] / max(1, pn) - 1.0) / 2.0)
+        it["spike"] = max(novelty, growth)
     n_max = max((it["n"] for it in issues), default=1) or 1
     o_max = max((it["outlets"] for it in issues), default=1) or 1
     for it in issues:
@@ -344,7 +367,7 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                "title": rep.title, "url": rep.url, "press": rep.press, "n": it["n"], "outlets": it["outlets"],
                "ranked": sum(m.ranked for m in mem), "search": round(it["search"], 2),
                "src": "".join(SOURCE_LABEL[x] for x in sorted(it["srcs"])), "spike": round(it["spike"], 2),
-               "first": it["first"], "kw": lead.keywords, "cat": lead.category, "subs": subs}
+               "first": it["first"], "kw": lead.keywords, "cat": lead.category, "subs": subs, "tid": it["tid"]}
         for cat in dict.fromkeys(("전체", lead.category)):
             if cat in stories and len(stories[cat]) < cfg.keep_n:
                 stories[cat].append(dict(row))
@@ -359,19 +382,10 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                     merged.append(a)
             merged.sort(key=lambda a: -len(a["rp"]))
             story_articles[lead.id] = merged[:40]
-    # 회차를 건너 같은 사건을 잇는 흐름 번호(tid). 흐름 그래프·순위 변동·처음 등장 시각이 이것으로 이어진다.
-    # (이슈 앵커나 스토리 id 는 회차마다 쉽게 바뀌어 그래프가 끊겼다 — threads.py 참고)
-    T = threads.from_files(cfg.site_dir / "data", ts)
-    tid_of = T.assign([{"id": it["mem"][0].id, "anc": "" if it["iid"].startswith("s:") else it["iid"],
-                        "urls": set().union(*(m.urls for m in it["mem"]))} for it in issues])
     for cat, rows in stories.items():
         pr = prev_story_ranks.get(cat, {})
         for i, row in enumerate(rows, 1):
             row["r"] = i
-            row["tid"] = tid_of.get(row["id"]) or threads.new_tid(row["id"])
-            first = T.first_seen(row["tid"])
-            if first and first < row["first"]:
-                row["first"] = first
             p = T.prev_rank(cat, row["tid"])
             if p is False:   # 공개된 앞 회차가 없으면(첫 수집 등) 예전 방식
                 row["d"] = "new" if row["iid"] not in pr else pr[row["iid"]] - i

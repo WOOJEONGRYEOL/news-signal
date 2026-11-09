@@ -388,7 +388,7 @@
         <tr><th><i class="sw" style="background:var(--consume)"></i>소비</th><td>‘많이 본 기사’에 이 사건·키워드를 올린 언론사 수</td><td>네이버 랭킹뉴스 (언론사 82곳 × 각 Top 5)</td></tr>
         <tr><th><i class="sw" style="background:var(--publish)"></i>발행</th><td>기사 제목에 등장한 건수</td><td>네이버 섹션 헤드라인 · 연합뉴스 RSS · 구글 뉴스 주제 피드</td></tr>
         <tr><th><i class="sw" style="background:var(--search)"></i>검색</th><td>실시간 검색어에 올라 있는지 (순위·트래픽 반영)</td><td>구글 트렌드 · 네이트 · 줌</td></tr>
-        <tr><th><i class="sw" style="background:var(--spike)"></i>급상승</th><td>스토리 = 등장 3시간 내이거나 직전보다 증가 · 키워드 = 7일 평균 대비</td><td>30분마다 쌓은 자체 이력</td></tr>
+        <tr><th><i class="sw" style="background:var(--spike)"></i>급상승</th><td>스토리 = 같은 사건이 처음 잡힌 지 3시간 내이거나 직전보다 기사 증가 · 키워드 = 7일 평균 대비</td><td>30분마다 쌓은 자체 이력</td></tr>
       </table></dd>
 
       <dt>관계망</dt>
@@ -579,7 +579,7 @@
     consume: "네이버 랭킹뉴스 — ‘많이 본 기사’에 올린 언론사 수",
     publish: "네이버 섹션 헤드라인·연합뉴스 RSS·구글 뉴스 주제 피드 — 제목에 등장한 기사 수",
     search: "구글 트렌드·네이트·줌 — 실시간 검색어 순위와 트래픽",
-    spikeStory: "30분마다 쌓은 자체 이력 — 등장 3시간 내이거나 직전 수집보다 기사 증가",
+    spikeStory: "30분마다 쌓은 자체 이력 — 같은 사건이 처음 잡힌 지 3시간 내이거나, 직전에 보였을 때보다 기사 증가",
     spikeKw: "30분마다 쌓은 자체 이력 — 지난 7일 평균 대비 몇 배",
   };
   const newsLi = (a, dim, ph) => `<li class="${dim?"dimmed":""}"><span class="t">${esc(fmtRel(a.d, base()))}</span><span><a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.t)}</a><span class="p">${esc(a.p)}</span>${ph ? `<span class="ph"><i style="background:${ph.c}"></i>${esc(ph.name)}</span>` : ""}${(a.rp||[]).length ? `<span class="rp">많이 본 · ${a.rp.length>1 ? (a.rp.length+"곳") : esc(a.rp[0])}</span>` : ""}<span class="o">${ORIGIN[a.o]||a.o||""}</span></span></li>`;

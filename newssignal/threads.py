@@ -71,6 +71,7 @@ class Threads:
                 d["urls"].update(a["u"] for a in story_articles.get(r[0], []) if isinstance(a, dict) and a.get("u"))
                 if len(r) > 12 and r[12] and r[12] < d["first"]:
                     d["first"] = r[12]
+                d["n"] = max(d.get("n", 0), r[7] if len(r) > 7 and isinstance(r[7], int) else 0)
         self.recent.append((ts, info, ranks))
         self.recent = self.recent[-LOOKBACK:]
 
@@ -79,6 +80,13 @@ class Threads:
         if not self.recent:
             return False
         return self.recent[-1][2].get(cat, {}).get(tid)
+
+    def prev_size(self, tid: str):
+        """이 흐름이 가장 최근에 보였던 회차의 기사 수(없으면 None)."""
+        for _, info, _ in reversed(self.recent):
+            if tid in info and info[tid].get("n"):
+                return info[tid]["n"]
+        return None
 
     def first_seen(self, tid: str):
         firsts = [info[tid]["first"] for _, info, _ in self.recent if tid in info and info[tid]["first"]]
