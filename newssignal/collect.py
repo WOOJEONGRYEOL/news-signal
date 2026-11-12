@@ -74,6 +74,11 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
     ts = now.isoformat(timespec="minutes")
     log: list[str] = []
     stop = load_stopwords(cfg.stopwords_file)
+    try:
+        no_fold = {l.strip().lower() for l in (cfg.root / "data" / "no_fold.txt").read_text(encoding="utf-8").splitlines()
+                   if l.strip() and not l.lstrip().startswith("#")}
+    except OSError:
+        no_fold = set()
     syn_of: dict[str, int] = {}     # 같은 뜻 묶음(data/synonyms.txt): 낱말 → 묶음 번호
     try:
         for gi, line in enumerate(l for l in (cfg.root / "data" / "synonyms.txt").read_text(encoding="utf-8").splitlines()
@@ -241,7 +246,7 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
             # 점수가 높은 대표 아래에 '함께 묶인 말'로 단다. 더 넓게 쓰이는 말(엔비디아)은 접지 않는다:
             # 작은 쪽의 80% 이상이 겹치고, 큰 쪽의 절반 이상을 차지할 때만.
             fold = None
-            for o in out:
+            for o in ([] if kw in no_fold else out):
                 a, b = r["idx"], o["_idx"]
                 if syn_of.get(kw) is not None and syn_of.get(kw) == syn_of.get(o["k"]):
                     fold = o       # 같은 뜻 묶음 — 기사가 안 겹쳐도 접는다(사임·퇴진·해임)
@@ -250,7 +255,10 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                     # 회사와 인물(엔비디아·젠슨황)처럼 서로 다른 대상은 기사가 많이 겹쳐도 접지 않는다:
                     # 양쪽 모두 상대의 80% 이상일 만큼 거의 같은 기사 집합일 때만.
                     inter = len(a & b)
-                    if inter / max(len(a), len(b)) >= 0.8:
+                    small = min(len(a), len(b))
+                    # 같은 구절의 조각(김민석·최민희·지시)은 기사 십수 건에 통째로 들어 있다: 작은 쪽이 20건 이하이고
+                    # 80% 이상이 큰 쪽 기사 안에 있으면 접는다. 기사가 더 많은 말(엔비디아 40건)은 독립 대상이라 접지 않는다.
+                    if inter / max(len(a), len(b)) >= 0.8 or (small <= 20 and inter / small >= 0.8 and inter / max(len(a), len(b)) >= 0.5):
                         fold = o
                         break
             if fold is not None:
