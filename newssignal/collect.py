@@ -74,11 +74,6 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
     ts = now.isoformat(timespec="minutes")
     log: list[str] = []
     stop = load_stopwords(cfg.stopwords_file)
-    try:
-        no_fold = {l.strip().lower() for l in (cfg.root / "data" / "no_fold.txt").read_text(encoding="utf-8").splitlines()
-                   if l.strip() and not l.lstrip().startswith("#")}
-    except OSError:
-        no_fold = set()
     syn_of: dict[str, int] = {}     # 같은 뜻 묶음(data/synonyms.txt): 낱말 → 묶음 번호
     try:
         for gi, line in enumerate(l for l in (cfg.root / "data" / "synonyms.txt").read_text(encoding="utf-8").splitlines()
@@ -209,6 +204,8 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
             best_cat[kw] = max(cats)[1]
     consume_max = max((r["consume"] for rows in per_cat.values() for r in rows.values()), default=0) or 1
 
+    searched_kw = {w for v in term_kw.values() for w in v.split()}   # 포털 검색어로 오른 적 있는 키워드(분야와 무관하게) — 스스로 화제라 접지 않는다
+
     def rank_category(cat: str, rows: dict[str, dict]) -> list[dict]:
         keep = {}
         for kw, r in rows.items():
@@ -242,23 +239,20 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                         break
             if dup:
                 continue
-            # 같은 사건의 말들(사임·퇴진·해임…)이 순위를 줄줄이 차지하지 않도록, 기사가 거의 같은 키워드는 접어서
-            # 점수가 높은 대표 아래에 '함께 묶인 말'로 단다. 더 넓게 쓰이는 말(엔비디아)은 접지 않는다:
-            # 작은 쪽의 80% 이상이 겹치고, 큰 쪽의 절반 이상을 차지할 때만.
+            # 같은 사건의 말들(사임·퇴진·해임…)이 순위를 줄줄이 차지하지 않도록, 조각 키워드는 접어서
+            # 점수가 높은 대표 아래에 '함께 묶인 말'로 단다.
             fold = None
-            for o in ([] if kw in no_fold else out):
+            for o in out:
                 a, b = r["idx"], o["_idx"]
                 if syn_of.get(kw) is not None and syn_of.get(kw) == syn_of.get(o["k"]):
                     fold = o       # 같은 뜻 묶음 — 기사가 안 겹쳐도 접는다(사임·퇴진·해임)
                     break
-                if a and b:
-                    # 회사와 인물(엔비디아·젠슨황)처럼 서로 다른 대상은 기사가 많이 겹쳐도 접지 않는다:
-                    # 양쪽 모두 상대의 80% 이상일 만큼 거의 같은 기사 집합일 때만.
-                    inter = len(a & b)
-                    small = min(len(a), len(b))
-                    # 같은 구절의 조각(김민석·최민희·지시)은 기사 십수 건에 통째로 들어 있다: 작은 쪽이 20건 이하이고
-                    # 80% 이상이 큰 쪽 기사 안에 있으면 접는다. 기사가 더 많은 말(엔비디아 40건)은 독립 대상이라 접지 않는다.
-                    if inter / max(len(a), len(b)) >= 0.8 or (small <= 20 and inter / small >= 0.8 and inter / max(len(a), len(b)) >= 0.5):
+                if a and b and len(a) <= len(b) <= 2.5 * len(a) and not r["src"] and r["search"] <= 0 and kw not in searched_kw:
+                    # 자동 기준: 검색어로 오른 적이 없는(스스로 화제가 아닌) 키워드가, 기사의 80% 이상을
+                    # 더 점수 높은 키워드와 함께 나오고 규모도 비슷하면(2.5배 이내) 그 키워드의 조각이다(최민희·지시·김민석).
+                    # 규모 제한은 '대통령'처럼 흔한 말이 작은 말들을 삼키지 못하게 한다.
+                    # 포털 검색어에 오른 말(엔비디아)은 기사가 많이 겹쳐도 독립된 화제라 접지 않는다.
+                    if len(a & b) / len(a) >= 0.8:
                         fold = o
                         break
             if fold is not None:
