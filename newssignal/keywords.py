@@ -107,6 +107,18 @@ class Extractor:
             self._raw.append(toks)
             counts.update(x.lower() for x in toks if x != CLAUSE_MARK)
         self.vocab = set(counts)
+        # '젠슨 황'과 '젠슨황'은 같은 사람인데 어절이 달라 따로 셌다(한 글자 '황'은 버려져 '젠슨'만 남음).
+        # 말뭉치 어딘가에 붙여 쓴 형태(A+B)가 있으면, 띄어 쓴 'A B'(B 는 한 글자)도 그 한 단어로 본다.
+        for i, toks in enumerate(self._raw):
+            out, j = [], 0
+            while j < len(toks):
+                if (j + 1 < len(toks) and len(toks[j + 1]) == 1 and re.fullmatch(r"[가-힣]", toks[j + 1])
+                        and len(toks[j]) >= 2 and re.fullmatch(r"[가-힣]+", toks[j])
+                        and (toks[j] + toks[j + 1]).lower() in self.vocab and toks[j] != CLAUSE_MARK):
+                    out.append(toks[j] + toks[j + 1]); j += 2
+                else:
+                    out.append(toks[j]); j += 1
+            self._raw[i] = out
         self.stem_cache: dict[str, str | None] = {}
 
     def stem(self, tok: str) -> str | None:

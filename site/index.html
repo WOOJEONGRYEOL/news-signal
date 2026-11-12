@@ -771,6 +771,7 @@
         <span class="chip tipwrap wide" data-tip="${esc(SIG_TIP.spikeKw)}"><i style="background:var(--spike)"></i>급상승 ×${o.sig.spike||0}</span>
         ${o.src ? `<span class="chip">${srcHtml(o.src)}</span>` : ""}
       </div>
+      ${(o.al&&o.al.length) ? `<p class="phnote">기사가 거의 같아 이 키워드 아래로 접은 말: ${o.al.map(x => `<b>${esc(x)}</b>`).join(" · ")}</p>` : ""}
       <div class="charthead"><span>관심도 흐름 (종합점수)</span>${rangeSeg()}</div>
       <div id="chart"><div class="chartnote">불러오는 중…</div></div>
       <!-- 흐름 그래프를 항상 먼저 둔다. 연관어가 없는 키워드는 고리 자리가 한 줄로 줄어 그래프가 위로 올라와

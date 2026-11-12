@@ -228,6 +228,20 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
                         break
             if dup:
                 continue
+            # 같은 사건의 말들(사임·퇴진·해임…)이 순위를 줄줄이 차지하지 않도록, 기사가 거의 같은 키워드는 접어서
+            # 점수가 높은 대표 아래에 '함께 묶인 말'로 단다. 더 넓게 쓰이는 말(엔비디아)은 접지 않는다:
+            # 작은 쪽의 80% 이상이 겹치고, 큰 쪽의 절반 이상을 차지할 때만.
+            fold = None
+            for o in out:
+                a, b = r["idx"], o["_idx"]
+                if a and b:
+                    inter = len(a & b)
+                    if inter / min(len(a), len(b)) >= 0.8 and inter / max(len(a), len(b)) >= 0.5:
+                        fold = o
+                        break
+            if fold is not None:
+                fold.setdefault("al", []).append(ex.display(kw))
+                continue
             out.append({"k": kw, "kd": ex.display(kw), "s": s,
                         "sig": {"search": round(r["search"], 2), "publish": r["publish"], "consume": r["consume"],
                                 "spike": r["spike"], "baseline": r["baseline"]},
