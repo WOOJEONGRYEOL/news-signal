@@ -74,6 +74,15 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
     ts = now.isoformat(timespec="minutes")
     log: list[str] = []
     stop = load_stopwords(cfg.stopwords_file)
+    syn_of: dict[str, int] = {}     # 같은 뜻 묶음(data/synonyms.txt): 낱말 → 묶음 번호
+    try:
+        for gi, line in enumerate(l for l in (cfg.root / "data" / "synonyms.txt").read_text(encoding="utf-8").splitlines()
+                                  if l.strip() and not l.lstrip().startswith("#")):
+            for w in line.split(","):
+                if w.strip():
+                    syn_of[w.strip().lower()] = gi
+    except OSError:
+        pass
     W = cfg.weights
 
     # ---------- 1. 출처 수집 ----------
@@ -234,9 +243,14 @@ def run_collect(cfg: Config, store: Store, *, use_news_search: bool = True, verb
             fold = None
             for o in out:
                 a, b = r["idx"], o["_idx"]
+                if syn_of.get(kw) is not None and syn_of.get(kw) == syn_of.get(o["k"]):
+                    fold = o       # 같은 뜻 묶음 — 기사가 안 겹쳐도 접는다(사임·퇴진·해임)
+                    break
                 if a and b:
+                    # 회사와 인물(엔비디아·젠슨황)처럼 서로 다른 대상은 기사가 많이 겹쳐도 접지 않는다:
+                    # 양쪽 모두 상대의 80% 이상일 만큼 거의 같은 기사 집합일 때만.
                     inter = len(a & b)
-                    if inter / min(len(a), len(b)) >= 0.8 and inter / max(len(a), len(b)) >= 0.5:
+                    if inter / max(len(a), len(b)) >= 0.8:
                         fold = o
                         break
             if fold is not None:
